@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>234Stays — Premium Shortlet Apartments Nigeria</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+.cards-loading{grid-column:1/-1;text-align:center;padding:48px;color:var(--gray-lt);font-size:14px}
+.cards-empty{grid-column:1/-1;text-align:center;padding:48px;color:var(--gray-lt);font-size:14px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#E07B39;
+  --orange-lt:#F5924A;
+  --orange-bg:#FEF3EB;
+  --dark:#1A1A2E;
+  --text:#2D2D2D;
+  --gray:#6B7280;
+  --gray-lt:#9CA3AF;
+  --border:#E5E7EB;
+  --bg:#F7F7F7;
+  --white:#FFFFFF;
+  --purple:#7C3AED;
+  --purple-lt:#EDE9FE;
+  --card-shadow:0 2px 16px rgba(0,0,0,0.07);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--text);font-size:15px}
+
+/* NAV */
+nav{
+  background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 80px;height:64px;position:sticky;top:0;z-index:100;
+}
+.logo{font-family:'DM Serif Display',serif;font-size:22px;color:var(--dark);letter-spacing:-.3px}
+.logo span{color:var(--orange)}
+nav ul{list-style:none;display:flex;gap:28px}
+nav ul a{text-decoration:none;color:var(--text);font-size:14px;font-weight:400;transition:color .2s}
+nav ul a:hover{color:var(--orange)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-phone{font-size:13px;color:var(--gray);font-weight:500}
+.nav-icon{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.nav-cta{background:var(--orange);color:#fff;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;transition:background .2s}
+.nav-cta:hover{background:var(--orange-lt)}
+
+/* HERO */
+.hero{
+  height:560px;position:relative;overflow:hidden;
+  background:url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&q=80') center/cover no-repeat;
+}
+.hero-overlay{position:absolute;inset:0;background:rgba(10,8,30,0.58)}
+.hero-content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 20px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:54px;color:#fff;line-height:1.12;margin-bottom:10px}
+.hero h1 em{color:var(--orange);font-style:normal}
+.hero p{color:rgba(255,255,255,.72);font-size:15px;margin-bottom:32px}
+
+/* SEARCH BAR */
+.search-bar{
+  background:#fff;border-radius:12px;display:flex;align-items:center;
+  padding:6px 6px 6px 18px;gap:0;width:100%;max-width:700px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.22);
+}
+.s-select{
+  border:none;outline:none;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:600;color:var(--text);cursor:pointer;
+  background:transparent;padding:8px 12px 8px 0;border-right:1px solid var(--border);
+  margin-right:14px;appearance:none;
+}
+.s-input{flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:transparent}
+.s-input::placeholder{color:var(--gray-lt)}
+.s-btn{background:var(--orange);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .2s;white-space:nowrap}
+.s-btn:hover{background:var(--orange-lt)}
+.s-btn svg{width:16px;height:16px}
+
+/* QUICK TAGS */
+.hero-tags{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;justify-content:center}
+.hero-tag{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:12px;padding:5px 16px;border-radius:20px;cursor:pointer;transition:background .2s;backdrop-filter:blur(4px)}
+.hero-tag:hover{background:rgba(255,255,255,.28)}
+
+/* TRUST STRIP */
+.trust-strip{background:var(--dark);padding:14px 80px;display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap}
+.trust-item{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.75);font-size:13px;font-weight:500}
+.trust-icon{font-size:18px}
+
+/* EXPERIENCE TAGS */
+.exp-section{padding:56px 80px 48px;background:var(--white)}
+.section-label{font-size:13px;color:var(--gray);text-align:center;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.section-title{font-family:'DM Serif Display',serif;font-size:32px;text-align:center;color:var(--dark);margin-bottom:6px}
+.section-sub{font-size:14px;color:var(--gray-lt);text-align:center;margin-bottom:40px}
+
+.exp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.exp-card{
+  border-radius:14px;overflow:hidden;position:relative;height:200px;cursor:pointer;
+  transition:transform .25s;
+}
+.exp-card:hover{transform:translateY(-4px)}
+.exp-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.exp-card:hover img{transform:scale(1.06)}
+.exp-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,rgba(0,0,0,.1) 60%);display:flex;flex-direction:column;justify-content:flex-end;padding:18px}
+.exp-label{color:#fff;font-size:16px;font-weight:700;font-family:'DM Serif Display',serif}
+.exp-count{color:rgba(255,255,255,.72);font-size:12px;margin-top:2px}
+.exp-tag{position:absolute;top:12px;left:12px;background:var(--orange);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.3px}
+
+/* LISTINGS */
+.listings{padding:56px 80px;background:var(--bg)}
+.section-header-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;flex-wrap:wrap;gap:16px}
+.section-header-row h2{font-family:'DM Serif Display',serif;font-size:30px;color:var(--dark)}
+.section-header-row p{font-size:13px;color:var(--gray-lt);margin-top:4px}
+.view-all{font-size:13px;font-weight:600;color:var(--orange);text-decoration:none}
+.filter-row{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap;align-items:center}
+.f-btn{padding:8px 20px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:13px;font-weight:500;cursor:pointer;color:var(--gray);transition:all .2s;font-family:'DM Sans',sans-serif}
+.f-btn.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.f-btn:hover:not(.active){border-color:var(--orange);color:var(--orange)}
+.f-divider{width:1px;height:20px;background:var(--border);margin:0 4px}
+
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.prop-card{background:var(--white);border-radius:14px;overflow:hidden;box-shadow:var(--card-shadow);transition:transform .25s,box-shadow .25s;cursor:pointer}
+.prop-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+.card-img{position:relative;height:210px;overflow:hidden}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.prop-card:hover .card-img img{transform:scale(1.04)}
+.tag{position:absolute;top:12px;left:12px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:5px;letter-spacing:.4px;text-transform:uppercase}
+.tag-shortlet{background:#7C3AED;color:#fff}
+.tag-featured{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.94);color:var(--dark);font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px}
+.avail-badge{position:absolute;bottom:12px;left:12px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:4px}
+.avail-yes{background:rgba(26,107,69,.92);color:#fff}
+.avail-no{background:rgba(220,38,38,.88);color:#fff}
+.card-body{padding:16px}
+.prop-name{font-weight:700;font-size:15px;color:var(--dark);margin-bottom:4px}
+.prop-addr{font-size:12px;color:var(--gray);display:flex;align-items:center;gap:4px;margin-bottom:12px}
+.prop-meta{display:flex;gap:14px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:12px;flex-wrap:wrap}
+.meta-item{font-size:12px;color:var(--gray);display:flex;align-items:center;gap:4px}
+.amenity-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.apill{background:var(--bg);color:var(--text);font-size:10px;font-weight:500;padding:3px 8px;border-radius:12px}
+.card-foot{display:flex;align-items:center;justify-content:space-between}
+.prop-price{font-family:'DM Serif Display',serif;font-size:20px;color:var(--orange)}
+.price-per{font-size:11px;color:var(--gray-lt);font-family:'DM Sans',sans-serif}
+.rating-mini{font-size:12px;color:var(--gray);display:flex;align-items:center;gap:3px}
+.detail-btn{background:var(--orange-bg);color:var(--orange);border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none;display:inline-block}
+.detail-btn:hover{background:var(--orange);color:#fff}
+
+/* WHY US */
+.why{padding:64px 80px;background:var(--white)}
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:44px}
+.why-card{text-align:center;padding:28px 20px;border-radius:14px;border:1.5px solid var(--border);transition:all .25s}
+.why-card:hover{border-color:var(--orange);box-shadow:0 4px 24px rgba(224,123,57,.1)}
+.why-icon{font-size:36px;margin-bottom:14px}
+.why-title{font-weight:700;font-size:15px;color:var(--dark);margin-bottom:8px}
+.why-text{font-size:13px;color:var(--gray);line-height:1.6}
+
+/* AMENITIES HIGHLIGHT */
+.amen-section{padding:64px 80px;background:linear-gradient(135deg,var(--dark) 0%,#2D2D4E 100%)}
+.amen-inner{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+.amen-left h2{font-family:'DM Serif Display',serif;font-size:34px;color:#fff;margin-bottom:12px;line-height:1.25}
+.amen-left p{font-size:14px;color:rgba(255,255,255,.65);line-height:1.75;margin-bottom:32px}
+.amen-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.amen-item{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:background .2s}
+.amen-item:hover{background:rgba(255,255,255,.12)}
+.amen-item-icon{font-size:22px}
+.amen-item-text{font-size:13px;color:rgba(255,255,255,.85);font-weight:500}
+.amen-img{border-radius:16px;overflow:hidden;height:420px}
+.amen-img img{width:100%;height:100%;object-fit:cover}
+
+/* NEIGHBORHOODS */
+.neighborhoods{padding:64px 80px;background:var(--bg)}
+.neigh-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.neigh-card{border-radius:12px;overflow:hidden;position:relative;height:170px;cursor:pointer}
+.neigh-card img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.neigh-card:hover img{transform:scale(1.06)}
+.neigh-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.62),transparent);display:flex;flex-direction:column;justify-content:flex-end;padding:16px}
+.neigh-name{color:#fff;font-weight:700;font-size:15px}
+.neigh-count{color:rgba(255,255,255,.72);font-size:12px}
+
+/* TESTIMONIALS */
+.testi{padding:64px 80px;background:var(--white)}
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.testi-card{background:var(--bg);border-radius:14px;padding:26px;transition:box-shadow .2s}
+.testi-card:hover{box-shadow:var(--card-shadow)}
+.testi-stars{color:var(--orange);font-size:14px;margin-bottom:12px}
+.testi-text{font-size:13px;color:var(--gray);line-height:1.75;margin-bottom:18px}
+.testi-author{display:flex;align-items:center;gap:10px}
+.testi-avatar{width:40px;height:40px;border-radius:50%;background:var(--orange-bg);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--orange)}
+.testi-name{font-weight:700;font-size:13px;color:var(--dark)}
+.testi-role{font-size:11px;color:var(--gray-lt)}
+
+/* CTA */
+.cta{padding:64px 80px;background:var(--orange-bg);text-align:center}
+.cta h2{font-family:'DM Serif Display',serif;font-size:36px;color:var(--dark);margin-bottom:12px}
+.cta p{font-size:15px;color:var(--gray);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto}
+.cta-btns{display:flex;gap:16px;justify-content:center}
+.btn-orange{background:var(--orange);color:#fff;padding:14px 36px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;transition:background .2s}
+.btn-orange:hover{background:var(--orange-lt)}
+.btn-ghost{border:2px solid var(--border);color:var(--dark);padding:14px 36px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;transition:all .2s}
+.btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+
+/* FOOTER */
+footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:56px 80px 28px}
+.footer-top{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+.f-brand .logo{color:#fff}
+.f-brand p{font-size:13px;margin-top:12px;line-height:1.7;max-width:260px}
+.f-col h4{color:#fff;font-size:13px;font-weight:700;margin-bottom:16px;letter-spacing:.3px;text-transform:uppercase}
+.f-col ul{list-style:none}
+.f-col li{margin-bottom:10px}
+.f-col a{color:rgba(255,255,255,.55);text-decoration:none;font-size:13px;transition:color .2s}
+.f-col a:hover{color:var(--orange)}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:24px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+
+/* WHATSAPP */
+.wa-fab{position:fixed;bottom:28px;right:28px;z-index:999;background:#25D366;color:#fff;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,.4);transition:transform .2s}
+.wa-fab:hover{transform:scale(1.1)}
+
+@media(max-width:1024px){
+  nav,section,.exp-section,.listings,.why,.amen-section,.neighborhoods,.testi,.cta,footer{padding-left:24px;padding-right:24px}
+  .cards-grid{grid-template-columns:1fr 1fr}
+  .exp-grid{grid-template-columns:1fr 1fr}
+  .why-grid{grid-template-columns:1fr 1fr}
+  .neigh-grid{grid-template-columns:1fr 1fr}
+  .amen-inner{grid-template-columns:1fr}
+  .footer-top{grid-template-columns:1fr 1fr}
+  .trust-strip{padding:14px 24px;gap:24px}
+}
+@media(max-width:640px){
+  nav ul{display:none}
+  .cards-grid{grid-template-columns:1fr}
+  .hero h1{font-size:34px}
+  .why-grid{grid-template-columns:1fr 1fr}
+  .testi-grid{grid-template-columns:1fr}
+  .search-bar{flex-wrap:wrap;padding:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">234<span>Stays</span></div>
+  <ul>
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Shortlets ▾</a></li>
+    <li><a href="#">Locations ▾</a></li>
+    <li><a href="#">Experiences</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="nav-phone">📞 0800-234-7829</span>
+    <div class="nav-icon">👤</div>
+    <a href="admin.html" class="nav-cta">Admin</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>Stay <em>Anywhere</em> in Nigeria<br/>Like You Own It</h1>
+    <p>Premium shortlet apartments in Lagos, Abuja & beyond — fully equipped, instantly bookable.</p>
+    <div class="search-bar">
+      <select class="s-select">
+        <option>All Types</option>
+        <option>Studio</option>
+        <option>1 Bedroom</option>
+        <option>2 Bedrooms</option>
+        <option>3+ Bedrooms</option>
+        <option>Penthouse</option>
+      </select>
+      <input class="s-input" type="text" placeholder="Lekki, Victoria Island, Abuja, Ibadan…"/>
+      <button class="s-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Search
+      </button>
+    </div>
+    <div class="hero-tags">
+      <span class="hero-tag">🎮 PS5 Available</span>
+      <span class="hero-tag">📺 Smart TVs</span>
+      <span class="hero-tag">⚡ 24/7 Power</span>
+      <span class="hero-tag">🛁 Luxury Bathrooms</span>
+      <span class="hero-tag">🏊 Pool Access</span>
+      <span class="hero-tag">🌊 Ocean View</span>
+    </div>
+  </div>
+</div>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip">
+  <div class="trust-item"><span class="trust-icon">✅</span> Verified Apartments</div>
+  <div class="trust-item"><span class="trust-icon">⚡</span> 24/7 Electricity Guaranteed</div>
+  <div class="trust-item"><span class="trust-icon">📶</span> High-Speed Wi-Fi in All Units</div>
+  <div class="trust-item"><span class="trust-icon">📞</span> 24/7 Guest Support</div>
+  <div class="trust-item"><span class="trust-icon">🔑</span> Instant Booking Confirmation</div>
+</div>
+
+<!-- EXPERIENCE CATEGORIES -->
+<section class="exp-section">
+  <p class="section-label">Browse by experience</p>
+  <h2 class="section-title">What Kind of Stay Are You Planning?</h2>
+  <p class="section-sub">From solo workcations to weekend parties — we have the perfect space.</p>
+  <div class="exp-grid">
+    <div class="exp-card">
+      <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80" alt="Couples"/>
+      <div class="exp-overlay">
+        <div class="exp-label">Couple's Getaway</div>
+        <div class="exp-count">48 apartments</div>
+      </div>
+    </div>
+    <div class="exp-card">
+      <img src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=600&q=80" alt="Party"/>
+      <div class="exp-tag">🎉 HOT</div>
+      <div class="exp-overlay">
+        <div class="exp-label">Party & Events</div>
+        <div class="exp-count">22 large apartments</div>
+      </div>
+    </div>
+    <div class="exp-card">
+      <img src="https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&q=80" alt="Work"/>
+      <div class="exp-overlay">
+        <div class="exp-label">Workcation</div>
+        <div class="exp-count">35 with fast Wi-Fi</div>
+      </div>
+    </div>
+    <div class="exp-card">
+      <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=600&q=80" alt="Family"/>
+      <div class="exp-overlay">
+        <div class="exp-label">Family Retreat</div>
+        <div class="exp-count">30 family-sized units</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LISTINGS -->
+<section class="listings">
+  <div class="section-header-row">
+    <div>
+      <h2>Available Shortlets</h2>
+      <p>All apartments below are verified and instantly bookable</p>
+    </div>
+    <a href="#" class="view-all">View All →</a>
+  </div>
+  <div class="filter-row" id="filterRow">
+    <button class="f-btn active" data-city="all">All Cities</button>
+    <button class="f-btn" data-city="Lagos">Lagos</button>
+    <button class="f-btn" data-city="Abuja">Abuja</button>
+    <button class="f-btn" data-city="Port Harcourt">Port Harcourt</button>
+    <button class="f-btn" data-city="Ibadan">Ibadan</button>
+    <div class="f-divider"></div>
+    <button class="f-btn" data-amenity="PS5">🎮 PS5</button>
+    <button class="f-btn" data-amenity="Pool">🏊 Pool</button>
+    <button class="f-btn" data-amenity="Gym">🏋 Gym</button>
+  </div>
+  <div class="cards-grid" id="listingsGrid">
+    <div class="cards-loading">Loading apartments…</div>
+  </div>
+</section>
+
+<!-- WHY 234STAYS -->
+<section class="why">
+  <p class="section-label">Why Choose Us</p>
+  <h2 class="section-title" style="font-family:'DM Serif Display',serif;font-size:32px;color:var(--dark);margin-bottom:6px">Everything You Need. Nothing You Don't.</h2>
+  <p class="section-sub">We inspect every apartment before it goes live. Your comfort is our reputation.</p>
+  <div class="why-grid">
+    <div class="why-card">
+      <div class="why-icon">⚡</div>
+      <div class="why-title">24/7 Electricity</div>
+      <p class="why-text">Every apartment on 234Stays has a guaranteed power supply — generator or solar backup included.</p>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">📶</div>
+      <div class="why-title">High-Speed Wi-Fi</div>
+      <p class="why-text">Minimum 50Mbps dedicated fibre in every unit. Stream, work, and game without interruption.</p>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">🎮</div>
+      <div class="why-title">PS5 & Smart TV</div>
+      <p class="why-text">Select premium apartments include a PlayStation 5, 65" smart TV, and Netflix/DSTV access.</p>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">🗓</div>
+      <div class="why-title">Real-Time Availability</div>
+      <p class="why-text">Live calendar keeps you from booking already-taken dates. No more "sorry it's occupied" surprises.</p>
+    </div>
+  </div>
+</section>
+
+<!-- AMENITIES HIGHLIGHT -->
+<section class="amen-section">
+  <div class="amen-inner">
+    <div class="amen-left">
+      <h2>Every Stay Comes<br/>Fully Loaded</h2>
+      <p>We believe a shortlet should feel better than a hotel. That's why our premium apartments include amenities that actually matter — not just a bed and four walls.</p>
+      <div class="amen-grid">
+        <div class="amen-item"><span class="amen-item-icon">⚡</span><span class="amen-item-text">24/7 Electricity</span></div>
+        <div class="amen-item"><span class="amen-item-icon">📶</span><span class="amen-item-text">High-Speed Wi-Fi</span></div>
+        <div class="amen-item"><span class="amen-item-icon">📺</span><span class="amen-item-text">65" Smart TV</span></div>
+        <div class="amen-item"><span class="amen-item-icon">🎮</span><span class="amen-item-text">PlayStation 5</span></div>
+        <div class="amen-item"><span class="amen-item-icon">❄️</span><span class="amen-item-text">Air Conditioning</span></div>
+        <div class="amen-item"><span class="amen-item-icon">🏊</span><span class="amen-item-text">Swimming Pool</span></div>
+        <div class="amen-item"><span class="amen-item-icon">🍳</span><span class="amen-item-text">Fully Fitted Kitchen</span></div>
+        <div class="amen-item"><span class="amen-item-icon">🔐</span><span class="amen-item-text">Smart Door Lock</span></div>
+      </div>
+    </div>
+    <div class="amen-img">
+      <img src="https://images.unsplash.com/photo-1617098900591-3f90928e8c54?w=800&q=80" alt="Premium apartment interior"/>
+    </div>
+  </div>
+</section>
+
+<!-- NEIGHBORHOODS -->
+<section class="neighborhoods" style="padding:64px 80px">
+  <div class="section-header-row">
+    <div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:30px;color:var(--dark)">Popular Shortlet Locations</h2>
+      <p style="font-size:13px;color:var(--gray-lt);margin-top:4px">Browse by Nigeria's most-booked neighbourhoods.</p>
+    </div>
+    <a href="#" class="view-all">View All →</a>
+  </div>
+  <div class="neigh-grid">
+    <div class="neigh-card">
+      <img src="https://images.unsplash.com/photo-1567360425618-1594206637d2?w=400&q=80" alt="Lekki"/>
+      <div class="neigh-overlay"><div class="neigh-name">Lekki, Lagos</div><div class="neigh-count">248 shortlets</div></div>
+    </div>
+    <div class="neigh-card">
+      <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80" alt="VI"/>
+      <div class="neigh-overlay"><div class="neigh-name">Victoria Island</div><div class="neigh-count">187 shortlets</div></div>
+    </div>
+    <div class="neigh-card">
+      <img src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80" alt="Abuja"/>
+      <div class="neigh-overlay"><div class="neigh-name">Maitama, Abuja</div><div class="neigh-count">143 shortlets</div></div>
+    </div>
+    <div class="neigh-card">
+      <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400&q=80" alt="Ikoyi"/>
+      <div class="neigh-overlay"><div class="neigh-name">Ikoyi, Lagos</div><div class="neigh-count">112 shortlets</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testi">
+  <div class="section-header-row">
+    <div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:30px;color:var(--dark)">What Guests Are Saying</h2>
+      <p style="font-size:13px;color:var(--gray-lt);margin-top:4px">Real reviews from verified stays.</p>
+    </div>
+  </div>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"The PS5 was a total bonus — my kids refused to leave! Power never went off, Wi-Fi was blazing. Easily the best shortlet experience we've had in Lagos."</p>
+      <div class="testi-author"><div class="testi-avatar">A</div><div><div class="testi-name">Adaeze Okonkwo</div><div class="testi-role">Guest · Lekki Apartment · 3 nights</div></div></div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">"Booked for a work trip to Abuja, the fibre internet made remote work seamless. The apartment felt like a 5-star hotel suite — will definitely rebook."</p>
+      <div class="testi-author"><div class="testi-avatar">K</div><div><div class="testi-name">Kunle Adeyemi</div><div class="testi-role">Guest · Wuse II Apartment · 5 nights</div></div></div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★☆</div>
+      <p class="testi-text">"Celebrated my anniversary at the Victoria Island penthouse. The smart TV, 24/7 light, and ocean view were everything. Booking was instant and stress-free."</p>
+      <div class="testi-author"><div class="testi-avatar">C</div><div><div class="testi-name">Chidi & Nneka</div><div class="testi-role">Guests · VI Penthouse · 2 nights</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>List Your Shortlet on 234Stays</h2>
+  <p>Join hundreds of hosts earning consistently. We handle availability management, enquiries, and guest vetting.</p>
+  <div class="cta-btns">
+    <a href="#" class="btn-orange">List My Apartment</a>
+    <a href="#" class="btn-ghost">Browse Shortlets</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="f-brand">
+      <div class="logo" style="color:#fff;font-family:'DM Serif Display',serif;font-size:22px">234<span style="color:var(--orange)">Stays</span></div>
+      <p>Nigeria's premium shortlet platform. Fully equipped apartments in Lagos, Abuja, Port Harcourt and beyond.</p>
+      <p style="margin-top:14px"><strong style="color:#fff">Headquarters</strong><br/>Plot 12, No 7B Unity Boulevard, Maitama, Abuja, FCT Nigeria.<br/>Tel: +234 906 201 9991</p>
+      <p style="margin-top:10px"><strong style="color:#fff">Lagos Office</strong><br/>Suite 4, Block 9 Marina Court, Lagos Island.<br/>Tel: +234 906 201 9994</p>
+    </div>
+    <div class="f-col">
+      <h4>Shortlets</h4>
+      <ul>
+        <li><a href="#">Studio Apartments</a></li>
+        <li><a href="#">1 Bedroom</a></li>
+        <li><a href="#">2 & 3 Bedrooms</a></li>
+        <li><a href="#">Penthouses</a></li>
+        <li><a href="#">With Pool</a></li>
+      </ul>
+    </div>
+    <div class="f-col">
+      <h4>Locations</h4>
+      <ul>
+        <li><a href="#">Lekki, Lagos</a></li>
+        <li><a href="#">Victoria Island</a></li>
+        <li><a href="#">Ikoyi</a></li>
+        <li><a href="#">Maitama, Abuja</a></li>
+        <li><a href="#">GRA, Port Harcourt</a></li>
+      </ul>
+    </div>
+    <div class="f-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">List Your Space</a></li>
+        <li><a href="admin.html">Admin Portal</a></li>
+        <li><a href="#">Contact Us</a></li>
+        <li><a href="#">FAQs</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 234Stays. All rights reserved.</span>
+    <span>Privacy Policy · Terms of Use</span>
+  </div>
+</footer>
+
+<a href="https://wa.me/2340000000000" class="wa-fab">💬</a>
+
+<script src="supabase-config.js"></script>
+<script>
+// Amenity icon map
+const amenityIcons = {
+  'PS5': '🎮', 'PlayStation': '🎮', 'Smart TV': '📺', 'Netflix': '🎬',
+  'Wi-Fi': '📶', 'Fibre': '📶', 'Air Conditioning': '❄️', 'AC': '❄️',
+  'Pool': '🏊', 'Swimming Pool': '🏊', 'Gym': '🏋', 'Generator': '⚡',
+  'CCTV': '🔐', 'Security': '🔐', 'Kitchen': '🍳', 'Parking': '🚗',
+  'Balcony': '🌇', 'Rooftop': '🌆', 'Jacuzzi': '🛁'
+};
+
+function getAmenityIcon(a){
+  for(const [key, icon] of Object.entries(amenityIcons)){
+    if(a.toLowerCase().includes(key.toLowerCase())) return icon;
+  }
+  return '✓';
+}
+
+let allProperties = [];
+let activeAmenityFilter = null;
+
+function formatNaira(amount){
+  return '₦' + Number(amount).toLocaleString('en-NG');
+}
+
+function renderPropertyCard(p){
+  const topAmenities = (p.amenities || []).slice(0, 3);
+  const amenityHtml = topAmenities.map(a =>
+    `<span class="apill">${getAmenityIcon(a)} ${a}</span>`
+  ).join('');
+
+  return `
+    <div class="prop-card" onclick="window.location='property-details.html?id=${p.id}'">
+      <div class="card-img">
+        <img src="${p.cover_image || ''}" alt="${p.title}" loading="lazy"/>
+        ${p.featured ? `<span class="tag-featured">⭐ Featured</span>` : ''}
+        <span class="tag tag-shortlet">Shortlet</span>
+        <span class="avail-badge avail-yes">Available Now</span>
+      </div>
+      <div class="card-body">
+        <div class="prop-name">${p.title}</div>
+        <div class="prop-addr">📍 ${p.address}, ${p.city}</div>
+        <div class="amenity-pills">${amenityHtml}</div>
+        <div class="prop-meta">
+          ${p.bedrooms ? `<span class="meta-item">🛏 ${p.bedrooms} Bed${p.bedrooms > 1 ? 's' : ''}</span>` : ''}
+          ${p.bathrooms ? `<span class="meta-item">🚿 ${p.bathrooms} Bath${p.bathrooms > 1 ? 's' : ''}</span>` : ''}
+          ${p.max_guests ? `<span class="meta-item">👥 Up to ${p.max_guests}</span>` : ''}
+        </div>
+        <div class="card-foot">
+          <div>
+            <div class="prop-price">${formatNaira(p.price)}</div>
+            <div class="price-per">${p.price_label || '/ night'}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            ${p.rating ? `<span class="rating-mini">⭐ ${p.rating}</span>` : ''}
+            <a href="property-details.html?id=${p.id}" class="detail-btn">Book Now</a>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderListings(properties){
+  const grid = document.getElementById('listingsGrid');
+  if(!properties.length){
+    grid.innerHTML = `<div class="cards-empty">No apartments found for this filter. Try another city or amenity.</div>`;
+    return;
+  }
+  grid.innerHTML = properties.map(renderPropertyCard).join('');
+}
+
+function applyFilters(cityFilter, amenityFilter){
+  let filtered = allProperties;
+  if(cityFilter && cityFilter !== 'all'){
+    filtered = filtered.filter(p => p.city === cityFilter);
+  }
+  if(amenityFilter){
+    filtered = filtered.filter(p =>
+      (p.amenities || []).some(a => a.toLowerCase().includes(amenityFilter.toLowerCase()))
+    );
+  }
+  renderListings(filtered);
+}
+
+async function loadListings(){
+  const grid = document.getElementById('listingsGrid');
+  grid.innerHTML = `<div class="cards-loading">Finding available apartments…</div>`;
+
+  const { data, error } = await supabaseClient
+    .from('properties')
+    .select('*')
+    .eq('is_active', true)
+    .eq('listing_type', 'shortlet')
+    .order('featured', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(12);
+
+  if(error){
+    console.error('Error loading properties:', error);
+    grid.innerHTML = `<div class="cards-empty">Couldn't load apartments right now. Please refresh.</div>`;
+    return;
+  }
+
+  allProperties = data;
+  renderListings(allProperties);
+}
+
+let activeCityFilter = 'all';
+
+document.getElementById('filterRow').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.f-btn');
+  if(!btn) return;
+
+  if(btn.dataset.city !== undefined){
+    document.querySelectorAll('[data-city]').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    activeCityFilter = btn.dataset.city;
+  } else if(btn.dataset.amenity !== undefined){
+    if(btn.classList.contains('active')){
+      btn.classList.remove('active');
+      activeAmenityFilter = null;
+    } else {
+      document.querySelectorAll('[data-amenity]').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      activeAmenityFilter = btn.dataset.amenity;
+    }
+  }
+
+  applyFilters(activeCityFilter, activeAmenityFilter);
+});
+
+loadListings();
+</script>
+</body>
+</html>
