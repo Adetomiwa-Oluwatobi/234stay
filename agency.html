@@ -24,23 +24,39 @@ nav ul a:hover{color:var(--orange)}
 
 /* HERO */
 .agency-hero{
-  background:linear-gradient(135deg,var(--dark) 0%,#2D2D4E 100%);
-  padding:64px 80px;display:flex;align-items:center;gap:48px;
+  position:relative;
+  min-height:440px;
+  padding:64px 80px;
+  display:flex;align-items:center;
+  overflow:hidden;
 }
-.agency-avatar{width:110px;height:110px;border-radius:20px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:48px;color:#fff;flex-shrink:0;overflow:hidden;border:3px solid rgba(255,255,255,.15)}
+.agency-hero-bg{
+  position:absolute;inset:0;
+  background:url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&q=80') center/cover no-repeat;
+  transition:opacity .4s;
+}
+.agency-hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(10,8,30,.88) 0%,rgba(26,20,60,.70) 60%,rgba(10,8,30,.50) 100%);
+}
+.agency-hero-content{
+  position:relative;z-index:2;
+  display:flex;align-items:center;gap:48px;width:100%;
+}
+.agency-avatar{width:120px;height:120px;border-radius:20px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:52px;color:#fff;flex-shrink:0;overflow:hidden;border:3px solid rgba(255,255,255,.25);box-shadow:0 8px 32px rgba(0,0,0,.3)}
 .agency-avatar img{width:100%;height:100%;object-fit:cover}
 .agency-info{flex:1}
-.agency-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.4px;margin-bottom:10px}
-.agency-name{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:6px}
-.agency-bio{font-size:14px;color:rgba(255,255,255,.65);max-width:520px;line-height:1.7;margin-bottom:20px}
+.agency-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);color:rgba(255,255,255,.85);font-size:11px;font-weight:700;padding:5px 14px;border-radius:20px;letter-spacing:.4px;margin-bottom:12px;border:1px solid rgba(255,255,255,.15)}
+.agency-name{font-family:'DM Serif Display',serif;font-size:40px;color:#fff;margin-bottom:8px;text-shadow:0 2px 12px rgba(0,0,0,.3)}
+.agency-bio{font-size:14px;color:rgba(255,255,255,.72);max-width:540px;line-height:1.75;margin-bottom:22px}
 .agency-meta{display:flex;gap:20px;flex-wrap:wrap}
-.agency-meta-item{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.75);font-size:13px;font-weight:500}
+.agency-meta-item{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.8);font-size:13px;font-weight:500}
 .agency-meta-icon{font-size:16px}
-.agency-cta-row{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
-.btn-wa{background:#25D366;color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:background .2s}
+.agency-cta-row{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.btn-wa{background:#25D366;color:#fff;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:background .2s;box-shadow:0 4px 16px rgba(37,211,102,.3)}
 .btn-wa:hover{background:#1da851}
-.btn-call{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .2s}
-.btn-call:hover{background:rgba(255,255,255,.2)}
+.btn-call{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.3);backdrop-filter:blur(6px);color:#fff;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .2s}
+.btn-call:hover{background:rgba(255,255,255,.22)}
 
 /* STATS STRIP */
 .stats-strip{background:var(--orange);padding:20px 80px;display:flex;gap:48px;flex-wrap:wrap}
@@ -103,7 +119,10 @@ footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:40px 80px 24px}
 @media(max-width:1024px){
   nav,.agency-hero,.stats-strip,.listings-section,.agency-cta,footer{padding-left:24px;padding-right:24px}
   .cards-grid{grid-template-columns:1fr 1fr}
-  .agency-hero{flex-direction:column;gap:24px}
+  .agency-hero{min-height:auto;padding:48px 24px}
+  .agency-hero-content{flex-direction:column;gap:24px;text-align:center}
+  .agency-meta{justify-content:center}
+  .agency-cta-row{justify-content:center}
   .stats-strip{gap:24px}
 }
 @media(max-width:640px){
@@ -126,20 +145,24 @@ footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:40px 80px 24px}
 
 <!-- AGENCY HERO (populated by JS) -->
 <div id="heroSection" style="display:none">
-  <div class="agency-hero">
-    <div class="agency-avatar" id="agencyAvatar">A</div>
-    <div class="agency-info">
-      <div class="agency-tag">🏢 Verified Shortlet Agency · 234Stays</div>
-      <h1 class="agency-name" id="agencyName">—</h1>
-      <p class="agency-bio" id="agencyBio">—</p>
-      <div class="agency-meta">
-        <div class="agency-meta-item" id="agencyCity" style="display:none"><span class="agency-meta-icon">📍</span> <span id="agencyCityVal"></span></div>
-        <div class="agency-meta-item" id="agencyPropCount"><span class="agency-meta-icon">🏠</span> <span id="agencyPropCountVal">0 shortlets</span></div>
-        <div class="agency-meta-item"><span class="agency-meta-icon">✅</span> Verified Agency</div>
-      </div>
-      <div class="agency-cta-row">
-        <a href="#" class="btn-wa" id="waBtn" style="display:none">💬 WhatsApp Us</a>
-        <a href="#" class="btn-call" id="callBtn" style="display:none">📞 Call Now</a>
+  <div class="agency-hero" id="agencyHero">
+    <div class="agency-hero-bg" id="agencyHeroBg"></div>
+    <div class="agency-hero-overlay"></div>
+    <div class="agency-hero-content">
+      <div class="agency-avatar" id="agencyAvatar">A</div>
+      <div class="agency-info">
+        <div class="agency-tag">🏢 Verified Shortlet Agency · 234Stays</div>
+        <h1 class="agency-name" id="agencyName">—</h1>
+        <p class="agency-bio" id="agencyBio">—</p>
+        <div class="agency-meta">
+          <div class="agency-meta-item" id="agencyCity" style="display:none"><span class="agency-meta-icon">📍</span> <span id="agencyCityVal"></span></div>
+          <div class="agency-meta-item" id="agencyPropCount"><span class="agency-meta-icon">🏠</span> <span id="agencyPropCountVal">0 shortlets</span></div>
+          <div class="agency-meta-item"><span class="agency-meta-icon">✅</span> Verified Agency</div>
+        </div>
+        <div class="agency-cta-row">
+          <a href="#" class="btn-wa" id="waBtn" style="display:none">💬 WhatsApp Us</a>
+          <a href="#" class="btn-call" id="callBtn" style="display:none">📞 Call Now</a>
+        </div>
       </div>
     </div>
   </div>
@@ -243,6 +266,13 @@ function showNotFound(){
 
 function renderHero(){
   const p=agencyProfile;
+  // Hero background — use agency logo if available, else first property cover image
+  const heroBg = document.getElementById('agencyHeroBg');
+  const heroImg = allProps.length ? allProps[0].cover_image : null;
+  if(heroImg){
+    heroBg.style.backgroundImage = `url('${heroImg}')`;
+  }
+
   // Avatar
   const av=document.getElementById('agencyAvatar');
   if(p.agency_logo){av.innerHTML=`<img src="${p.agency_logo}" alt="${p.agency_name}"/>`;}
