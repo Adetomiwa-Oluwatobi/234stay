@@ -6,25 +6,31 @@
 const SUPABASE_URL = 'https://ybqjnmwasfpezjrhuviq.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Uh5PqJlM4_5Hw2cnh2HyqA_eqWo3lCe';
 
+ 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true
   }
 });
-
+ 
 // ── Auth helpers used across all pages ──────────────────
-
+ 
 async function getSession() {
   const { data } = await supabaseClient.auth.getSession();
   return data.session;
 }
-
+ 
 async function getMyProfile() {
-  const { data } = await supabaseClient.rpc('get_my_profile');
-  return data ? JSON.parse(data) : null;
+  const { data, error } = await supabaseClient.rpc('get_my_profile');
+  if (error || !data) return null;
+  // Supabase may return already-parsed object or a JSON string depending on client version
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch { return null; }
+  }
+  return data;
 }
-
+ 
 async function requireAuth(allowedRoles = ['admin', 'agency']) {
   const session = await getSession();
   if (!session) { window.location.href = 'login.html'; return null; }
@@ -35,8 +41,9 @@ async function requireAuth(allowedRoles = ['admin', 'agency']) {
   }
   return { session, profile };
 }
-
+ 
 async function signOut() {
   await supabaseClient.auth.signOut();
   window.location.href = 'login.html';
 }
+ 
