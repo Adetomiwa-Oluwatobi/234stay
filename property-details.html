@@ -448,13 +448,16 @@ footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:56px 80px 28px}
 </div>
 
 <!-- SIMILAR -->
-<section class="similar-section">
-  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;max-width:1280px;margin-left:auto;margin-right:auto">
+<section class="similar-section" id="similarSection" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;max-width:1280px;margin-left:auto;margin-right:auto;flex-wrap:wrap;gap:12px">
     <div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--dark)">Similar Shortlets</h2>
-      <p style="font-size:13px;color:var(--gray-lt);margin-top:4px">Other available apartments you may like</p>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--dark)" id="similarTitle">More from This Agency</h2>
+      <p style="font-size:13px;color:var(--gray-lt);margin-top:4px" id="similarSub">Other apartments by the same host</p>
     </div>
-    <a href="index.html" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none">View All →</a>
+    <div style="display:flex;gap:12px;align-items:center">
+      <a id="agencyProfileLink" href="#" style="display:none;font-size:13px;font-weight:600;color:var(--purple);text-decoration:none;background:var(--purple-bg,#EDE9FE);padding:8px 16px;border-radius:8px">🏢 View Agency Profile →</a>
+      <a href="index.html" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none">Browse All →</a>
+    </div>
   </div>
   <div class="sim-grid" id="similarGrid">
     <!-- filled by JS -->
@@ -657,11 +660,8 @@ function buildSpecs(p){
   if(btn) row.appendChild(btn);
 }
 
-async function loadSimilar(city, currentId){
-  const { data } = await supabaseClient.from('properties').select('*')
-    .eq('is_active',true).eq('listing_type','shortlet').eq('city',city).neq('id',currentId).limit(3);
-  if(!data||!data.length){ document.getElementById('similarGrid').innerHTML=`<p style="font-size:13px;color:var(--gray-lt)">No similar listings yet.</p>`; return; }
-  document.getElementById('similarGrid').innerHTML = data.map(p=>`
+function renderSimCards(props){
+  return props.map(p=>`
     <div class="prop-card" onclick="window.location='property-details.html?id=${p.id}'">
       <div class="card-img">
         <img src="${p.cover_image||''}" alt="${p.title}" loading="lazy"/>
@@ -681,6 +681,50 @@ async function loadSimilar(city, currentId){
         </div>
       </div>
     </div>`).join('');
+}
+
+async function loadSimilar(ownerId, city, currentId){
+  const grid = document.getElementById('similarGrid');
+  const section = document.getElementById('similarSection');
+
+  // First: try same agency (owner_id)
+  let data = null;
+  if(ownerId){
+    const res = await supabaseClient.from('properties').select('*')
+      .eq('is_active',true).eq('listing_type','shortlet')
+      .eq('owner_id', ownerId).neq('id', currentId).limit(3);
+    data = res.data;
+
+    // Fetch agency profile to get name + slug for the profile link
+    const { data: profile } = await supabaseClient.from('profiles')
+      .select('agency_name, agency_slug').eq('id', ownerId).single();
+    if(profile){
+      const agencyName = profile.agency_name || 'This Agency';
+      document.getElementById('similarTitle').textContent = `More from ${agencyName}`;
+      document.getElementById('similarSub').textContent = `Other shortlets listed by ${agencyName}`;
+      if(profile.agency_slug){
+        const link = document.getElementById('agencyProfileLink');
+        link.href = `agency.html?slug=${profile.agency_slug}`;
+        link.style.display = 'inline-flex';
+        link.textContent = `🏢 ${agencyName}'s Profile →`;
+      }
+    }
+  }
+
+  // Fallback: same city if no agency results
+  if(!data || !data.length){
+    const res = await supabaseClient.from('properties').select('*')
+      .eq('is_active',true).eq('listing_type','shortlet')
+      .eq('city', city).neq('id', currentId).limit(3);
+    data = res.data;
+    document.getElementById('similarTitle').textContent = `More Shortlets in ${city}`;
+    document.getElementById('similarSub').textContent = `Other available apartments in the same city`;
+    document.getElementById('agencyProfileLink').style.display = 'none';
+  }
+
+  if(!data || !data.length){ section.style.display='none'; return; }
+  section.style.display = 'block';
+  grid.innerHTML = renderSimCards(data);
 }
 
 function renderProperty(p){
@@ -724,7 +768,7 @@ function renderProperty(p){
   calYear=now.getFullYear(); calMonth=now.getMonth();
   renderCal();
   loadBlockedDates(p.id);
-  loadSimilar(p.city,p.id);
+  loadSimilar(p.owner_id, p.city, p.id);
 }
 
 function showError(){ document.getElementById('pageLoading').style.display='none'; document.getElementById('pageError').style.display='flex'; }
@@ -746,6 +790,7 @@ function setupBookingForm(p){
     btn.textContent='Processing…'; btn.disabled=true;
     const payload={
       property_id:p.id, property_title:p.title,
+      owner_id: p.owner_id || null,
       full_name:document.getElementById('bookName').value,
       phone:document.getElementById('bookPhone').value,
       preferred_date:document.getElementById('bookCheckin').value||null,

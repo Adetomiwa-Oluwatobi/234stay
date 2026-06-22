@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agency Dashboard – 234Stays</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#E07B39;--orange-lt:#F5924A;--orange-bg:#FEF3EB;
+  --dark:#1A1A2E;--text:#2D2D2D;--gray:#6B7280;--gray-lt:#9CA3AF;
+  --border:#E5E7EB;--bg:#F0F2F5;--white:#fff;
+  --green:#059669;--green-bg:#D1FAE5;--red:#DC2626;--red-bg:#FEE2E2;
+  --purple:#7C3AED;--purple-bg:#EDE9FE;
+  --sidebar-w:240px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--dark);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200}
+.sidebar-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo{font-family:'DM Serif Display',serif;font-size:20px;color:#fff}
+.logo span{color:var(--orange)}
+.agency-tag{display:inline-flex;align-items:center;gap:4px;margin-top:6px;background:rgba(124,58,237,.25);color:#C4B5FD;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.4px}
+.nav-section{padding:20px 0}
+.nav-label{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.3);padding:0 20px 10px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:rgba(255,255,255,.6);font-size:13px;font-weight:500;transition:all .2s;border-left:3px solid transparent;text-decoration:none}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nav-item.active{color:#fff;background:rgba(224,123,57,.15);border-left-color:var(--orange)}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-bottom{margin-top:auto;padding:20px;border-top:1px solid rgba(255,255,255,.08)}
+.user-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:14px;flex-shrink:0}
+.user-name{font-size:13px;color:#fff;font-weight:600;line-height:1.3}
+.user-agency{font-size:11px;color:rgba(255,255,255,.4)}
+.signout-btn{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.signout-btn:hover{background:rgba(220,38,38,.2);color:#FCA5A5;border-color:rgba(220,38,38,.3)}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-title{font-weight:700;font-size:16px;color:var(--dark)}
+.share-link-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--gray);cursor:pointer;transition:all .2s}
+.share-link-box:hover{border-color:var(--orange);color:var(--orange)}
+.share-link-box span{font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.content{padding:28px 32px;flex:1}
+
+/* VIEWS */
+.view{display:none}.view.active{display:block}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px}
+.stat-card{background:var(--white);border-radius:12px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);display:flex;align-items:flex-start;gap:14px}
+.stat-icon{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-label{font-size:12px;color:var(--gray);margin-bottom:4px}
+.stat-value{font-family:'DM Serif Display',serif;font-size:24px;color:var(--dark)}
+.stat-hint{font-size:11px;color:var(--gray-lt);margin-top:3px}
+
+/* PANEL */
+.panel{background:var(--white);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.07);overflow:hidden;margin-bottom:24px}
+.panel-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.panel-head h2{font-size:15px;font-weight:700;color:var(--dark)}
+.panel-body{padding:22px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none}
+.btn-orange{background:var(--orange);color:#fff}.btn-orange:hover{background:var(--orange-lt)}
+.btn-ghost{background:transparent;border:1.5px solid var(--border);color:var(--gray)}.btn-ghost:hover{border-color:var(--orange);color:var(--orange)}
+.btn-red{background:var(--red-bg);color:var(--red)}.btn-red:hover{background:var(--red);color:#fff}
+.btn-green{background:var(--green-bg);color:var(--green)}.btn-green:hover{background:var(--green);color:#fff}
+.btn-purple{background:var(--purple-bg);color:var(--purple)}.btn-purple:hover{background:var(--purple);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;font-size:11px;font-weight:700;color:var(--gray-lt);text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;border-bottom:2px solid var(--border)}
+.data-table td{padding:13px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--bg)}
+.prop-thumb{width:48px;height:38px;border-radius:6px;object-fit:cover;display:block}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;gap:4px}
+.badge-active{background:var(--green-bg);color:var(--green)}
+.badge-inactive{background:#F3F4F6;color:var(--gray)}
+.badge-new{background:#DBEAFE;color:#1D4ED8}
+.badge-contacted{background:var(--orange-bg);color:var(--orange)}
+.badge-completed{background:var(--green-bg);color:var(--green)}
+.badge-cancelled{background:var(--red-bg);color:var(--red)}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:12px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.4px}
+.form-group input,.form-group select,.form-group textarea{
+  padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);
+  font-size:13px;font-family:'DM Sans',sans-serif;outline:none;
+  background:var(--bg);color:var(--text);transition:border-color .2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange);background:var(--white)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group.full{grid-column:1/-1}
+.form-section-title{font-size:13px;font-weight:700;color:var(--dark);grid-column:1/-1;padding-top:8px;border-top:1px solid var(--border);margin-top:4px}
+.tag-input-wrap{border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--bg);display:flex;flex-wrap:wrap;gap:6px;min-height:42px;cursor:text}
+.tag-input-wrap:focus-within{border-color:var(--orange);background:var(--white)}
+.tag-pill{background:var(--orange-bg);color:var(--orange);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.tag-pill button{background:none;border:none;cursor:pointer;color:inherit;font-size:14px;padding:0}
+.tag-input{border:none;outline:none;background:transparent;font-size:13px;font-family:'DM Sans',sans-serif;min-width:100px;flex:1}
+.form-hint{font-size:11px;color:var(--gray-lt);margin-top:3px}
+.img-preview{width:100%;height:130px;border-radius:8px;object-fit:cover;border:1.5px solid var(--border);margin-top:8px;background:var(--bg);display:none}
+
+/* AVAILABILITY */
+.avail-manager{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.cal-big{background:var(--white);border-radius:14px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.cal-big-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.cal-big-title{font-family:'DM Serif Display',serif;font-size:18px;color:var(--dark)}
+.cal-nav-btn{background:none;border:1.5px solid var(--border);border-radius:8px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--gray);transition:all .2s}
+.cal-nav-btn:hover{border-color:var(--orange);color:var(--orange)}
+.cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.cal-dow{text-align:center;font-size:10px;font-weight:700;color:var(--gray-lt);padding:5px 0;text-transform:uppercase}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:2px solid transparent}
+.cal-cell.empty{background:transparent;cursor:default;border:none}
+.cal-cell.past{color:var(--gray-lt);cursor:not-allowed;background:transparent}
+.cal-cell.avail{background:#D1FAE5;color:#065F46}.cal-cell.avail:hover{background:#A7F3D0}
+.cal-cell.blocked{background:#FEE2E2;color:#991B1B}.cal-cell.blocked:hover{background:#FCA5A5}
+.cal-cell.today{background:var(--orange-bg);color:var(--orange);border-color:var(--orange);font-weight:700}
+.cal-cell.selected{border-color:var(--orange)!important;box-shadow:0 0 0 3px rgba(224,123,57,.2)}
+.cal-legend{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray)}
+.leg-dot{width:12px;height:12px;border-radius:3px}
+
+.dap{background:var(--white);border-radius:14px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.dap h3{font-size:14px;font-weight:700;color:var(--dark);margin-bottom:3px}
+.dap-sub{font-size:12px;color:var(--gray-lt);margin-bottom:16px}
+.dap-sel{background:var(--orange-bg);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:none}
+.dap-sel-label{font-size:11px;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.dap-sel-val{font-family:'DM Serif Display',serif;font-size:16px;color:var(--dark)}
+.dap-status{font-size:12px;margin-top:3px}
+.dap-status.blocked{color:var(--red)}.dap-status.avail{color:var(--green)}
+.dap-actions{display:flex;flex-direction:column;gap:8px}
+.range-block{border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-top:14px}
+.range-block h4{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:10px}
+.range-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.range-row label{font-size:10px;font-weight:700;color:var(--gray);display:block;margin-bottom:3px;text-transform:uppercase}
+.range-row input{width:100%;padding:7px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.range-row input:focus{border-color:var(--orange)}
+.range-reason{width:100%;padding:7px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:8px}
+.blocked-list{margin-top:14px}
+.blocked-list-title{font-size:11px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.blocked-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--red-bg);border-radius:7px;margin-bottom:5px}
+.blocked-item-date{font-size:11px;color:var(--red);font-weight:600}
+.blocked-item-reason{font-size:10px;color:rgba(220,38,38,.7)}
+.unblock-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--red);padding:2px;transition:transform .2s}
+.unblock-btn:hover{transform:scale(1.2)}
+
+/* PROFILE SETTINGS */
+.profile-grid{display:grid;grid-template-columns:200px 1fr;gap:32px;align-items:start}
+.profile-avatar-wrap{text-align:center}
+.profile-avatar{width:100px;height:100px;border-radius:50%;background:var(--purple-bg);display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:700;color:var(--purple);margin:0 auto 12px;overflow:hidden}
+.profile-avatar img{width:100%;height:100%;object-fit:cover}
+.share-link-section{background:linear-gradient(135deg,var(--dark),#2D2D4E);border-radius:14px;padding:22px;margin-top:24px}
+.share-link-section h3{font-family:'DM Serif Display',serif;font-size:18px;color:#fff;margin-bottom:6px}
+.share-link-section p{font-size:13px;color:rgba(255,255,255,.6);margin-bottom:16px}
+.link-copy-row{display:flex;gap:8px;align-items:center}
+.link-display{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:10px 14px;font-size:13px;color:#fff;font-family:'DM Sans',sans-serif;word-break:break-all}
+.copy-btn{background:var(--orange);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:background .2s}
+.copy-btn:hover{background:var(--orange-lt)}
+
+/* PROPERTY SELECTOR */
+.prop-sel-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 22px;border-bottom:1px solid var(--border)}
+.prop-sel-wrap label{font-size:13px;font-weight:600;color:var(--dark)}
+.prop-sel-box{padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;min-width:240px;background:var(--white)}
+.prop-sel-box:focus{border-color:var(--orange)}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{background:var(--dark);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);transform:translateX(120%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);pointer-events:all}
+.toast.show{transform:translateX(0)}
+.toast.success{border-left:4px solid var(--green)}
+.toast.error{border-left:4px solid var(--red)}
+.toast.info{border-left:4px solid var(--orange)}
+
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:36px;color:var(--gray-lt);font-size:13px}
+
+@media(max-width:1024px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .avail-manager{grid-template-columns:1fr}
+  .profile-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .main{margin-left:0}
+  .sidebar{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo">234<span>Stays</span></div>
+    <div class="agency-tag">🏢 Agency Portal</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item active" data-view="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">My Listings</div>
+    <a class="nav-item" data-view="my-properties"><span class="nav-icon">🏠</span> My Shortlets</a>
+    <a class="nav-item" data-view="add-property"><span class="nav-icon">➕</span> Add Shortlet</a>
+    <a class="nav-item" data-view="availability"><span class="nav-icon">📅</span> Availability</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Business</div>
+    <a class="nav-item" data-view="requests"><span class="nav-icon">📋</span> Booking Requests</a>
+    <a class="nav-item" data-view="profile"><span class="nav-icon">⚙️</span> Agency Profile</a>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="user-row">
+      <div class="user-avatar" id="sidebarInitial">A</div>
+      <div>
+        <div class="user-name" id="sidebarName">Loading…</div>
+        <div class="user-agency" id="sidebarAgency"></div>
+      </div>
+    </div>
+    <button class="signout-btn" onclick="signOut()">Sign Out</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="share-link-box" onclick="copyShareLink()" id="shareLinkBox" style="display:none">
+        🔗 <span id="shareLinkDisplay"></span> · Copy link
+      </div>
+      <a href="index.html" style="font-size:13px;color:var(--gray);text-decoration:none">← Site</a>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon" style="background:#EDE9FE">🏠</div><div><div class="stat-label">My Shortlets</div><div class="stat-value" id="statProps">—</div><div class="stat-hint">Active listings</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#DBEAFE">📋</div><div><div class="stat-label">New Requests</div><div class="stat-value" id="statNewReqs">—</div><div class="stat-hint">Awaiting response</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#FEF3EB">📅</div><div><div class="stat-label">Blocked Dates</div><div class="stat-value" id="statBlockedDates">—</div><div class="stat-hint">Across all properties</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#D1FAE5">✅</div><div><div class="stat-label">Completed Stays</div><div class="stat-value" id="statCompleted">—</div><div class="stat-hint">Total fulfilled</div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Recent Booking Requests</h2><button class="btn btn-ghost btn-sm" onclick="switchView('requests')">View All</button></div>
+        <div style="overflow-x:auto">
+          <table class="data-table"><thead><tr><th>Guest</th><th>Property</th><th>Check-in</th><th>Status</th><th></th></tr></thead>
+          <tbody id="dashReqs"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+      <!-- SHARE LINK BANNER -->
+      <div class="share-link-section" id="shareBanner" style="display:none">
+        <h3>🔗 Your Agency Profile Link</h3>
+        <p>Share this link with clients — they'll see all your listings, your contact info, and can browse your portfolio.</p>
+        <div class="link-copy-row">
+          <div class="link-display" id="bannerLinkDisplay">—</div>
+          <button class="copy-btn" onclick="copyShareLink()">📋 Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY PROPERTIES -->
+    <div class="view" id="view-my-properties">
+      <div class="panel">
+        <div class="panel-head"><h2>My Shortlets</h2>
+          <div style="display:flex;gap:8px">
+            <input class="form-group input" type="text" id="propSearch" placeholder="Search…" style="padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:var(--bg)" oninput="filterMyProps()"/>
+            <button class="btn btn-orange" onclick="switchView('add-property')">+ Add Shortlet</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table"><thead><tr><th>Photo</th><th>Title</th><th>City</th><th>Price</th><th>Beds</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="myPropsBody"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD / EDIT PROPERTY -->
+    <div class="view" id="view-add-property">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 id="addPropTitle">Add New Shortlet</h2>
+          <button class="btn btn-ghost btn-sm" onclick="resetForm();switchView('my-properties')">← Back</button>
+        </div>
+        <div class="panel-body">
+          <form id="propForm">
+            <input type="hidden" id="editId"/>
+            <div class="form-grid">
+              <div class="form-group full"><div class="form-section-title">Basic Info</div></div>
+              <div class="form-group full"><label>Title *</label><input type="text" id="fTitle" placeholder="e.g. Luxury 2-Bedroom, Lekki Phase 1" required/></div>
+              <div class="form-group"><label>Category</label><select id="fCategory"><option>Studio Apartment</option><option>1 Bedroom Apartment</option><option>2 Bedroom Apartment</option><option selected>3 Bedroom Apartment</option><option>Duplex</option><option>Penthouse</option><option>Villa</option></select></div>
+              <div class="form-group"><label>City *</label><select id="fCity" required><option>Lagos</option><option>Abuja</option><option>Port Harcourt</option><option>Ibadan</option><option>Benin City</option></select></div>
+              <div class="form-group full"><label>Address *</label><input type="text" id="fAddress" placeholder="e.g. 15 Admiralty Way, Lekki Phase 1" required/></div>
+              <div class="form-group full"><label>Full Location (breadcrumb)</label><input type="text" id="fFullLocation" placeholder="e.g. 15 Admiralty Way, Lekki Phase 1, Lagos State, Nigeria"/></div>
+
+              <div class="form-group full"><div class="form-section-title">Pricing</div></div>
+              <div class="form-group"><label>Price (₦) *</label><input type="number" id="fPrice" placeholder="e.g. 75000" required/></div>
+              <div class="form-group"><label>Per</label><select id="fPriceLabel"><option value="/ night">/ night</option><option value="/ weekend">/ weekend</option><option value="/ week">/ week</option><option value="/ month">/ month</option></select></div>
+
+              <div class="form-group full"><div class="form-section-title">Specs</div></div>
+              <div class="form-group"><label>Bedrooms</label><input type="number" id="fBeds" min="0" value="1"/></div>
+              <div class="form-group"><label>Bathrooms</label><input type="number" id="fBaths" min="0" value="1"/></div>
+              <div class="form-group"><label>Sqft</label><input type="number" id="fSqft" placeholder="e.g. 1200"/></div>
+              <div class="form-group"><label>Max Guests</label><input type="number" id="fGuests" min="1" value="2"/></div>
+
+              <div class="form-group full"><div class="form-section-title">Media</div></div>
+              <div class="form-group full"><label>Cover Image URL</label><input type="url" id="fCover" placeholder="https://…" oninput="previewImg(this.value)"/><img id="coverPreview" class="img-preview" alt=""/></div>
+              <div class="form-group full"><label>Gallery Images (one URL per line)</label><textarea id="fGallery" rows="3" placeholder="https://img1.jpg&#10;https://img2.jpg"></textarea></div>
+              <div class="form-group full"><label>Video URL</label><input type="url" id="fVideo" placeholder="https://youtube.com/embed/…"/></div>
+
+              <div class="form-group full"><div class="form-section-title">Description & Amenities</div></div>
+              <div class="form-group full"><label>Overview</label><textarea id="fOverview" rows="4" placeholder="Describe this apartment…"></textarea></div>
+              <div class="form-group full">
+                <label>Amenities (type + Enter)</label>
+                <div class="tag-input-wrap" id="amenWrap" onclick="document.getElementById('amenInput').focus()"></div>
+                <span class="form-hint">e.g. PS5 · Smart TV · 24/7 Electricity · High-Speed Wi-Fi · Swimming Pool · Air Conditioning</span>
+              </div>
+              <div class="form-group full"><label>House Rules (one per line)</label><textarea id="fRules" rows="3" placeholder="No smoking&#10;No parties after 11PM"></textarea></div>
+              <div class="form-group full"><label>Booking Terms (one per line)</label><textarea id="fTerms" rows="3" placeholder="50% deposit to confirm&#10;Balance on check-in"></textarea></div>
+
+              <div class="form-group full"><div class="form-section-title">Host Info</div></div>
+              <div class="form-group"><label>Host Name</label><input type="text" id="fAgentName"/></div>
+              <div class="form-group"><label>Host Phone</label><input type="tel" id="fAgentPhone"/></div>
+              <div class="form-group"><label>WhatsApp</label><input type="tel" id="fAgentWa"/></div>
+              <div class="form-group"><label>Host Avatar URL</label><input type="url" id="fAgentAvatar"/></div>
+
+              <div class="form-group full"><div class="form-section-title">Flags</div></div>
+              <div class="form-group" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="fFeatured" style="width:16px;height:16px;accent-color:var(--orange)"/><label for="fFeatured" style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:500">Mark as Featured</label></div>
+              <div class="form-group" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="fVerified" checked style="width:16px;height:16px;accent-color:var(--orange)"/><label for="fVerified" style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:500">Verified listing</label></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:24px;justify-content:flex-end">
+              <button type="button" class="btn btn-ghost" onclick="resetForm();switchView('my-properties')">Cancel</button>
+              <button type="submit" class="btn btn-orange" id="propSubmitBtn">Save Shortlet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- AVAILABILITY -->
+    <div class="view" id="view-availability">
+      <div class="panel">
+        <div class="prop-sel-wrap">
+          <label>Property:</label>
+          <select class="prop-sel-box" id="availSel"><option value="">— Select a property —</option></select>
+        </div>
+        <div id="availInner" style="display:none;padding:22px">
+          <div class="avail-manager">
+            <div class="cal-big">
+              <div class="cal-big-header">
+                <button class="cal-nav-btn" id="calPrev">‹</button>
+                <span class="cal-big-title" id="calTitle"></span>
+                <button class="cal-nav-btn" id="calNext">›</button>
+              </div>
+              <div class="cal-dows"><div class="cal-dow">Sun</div><div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div><div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div></div>
+              <div class="cal-days" id="calDays"></div>
+              <div class="cal-legend">
+                <div class="leg-item"><div class="leg-dot" style="background:#D1FAE5;border:1.5px solid #059669"></div> Available</div>
+                <div class="leg-item"><div class="leg-dot" style="background:#FEE2E2;border:1.5px solid var(--red)"></div> Blocked</div>
+                <div class="leg-item"><div class="leg-dot" style="background:var(--orange-bg);border:2px solid var(--orange)"></div> Today</div>
+              </div>
+            </div>
+            <div>
+              <div class="dap">
+                <h3>Date Actions</h3>
+                <div class="dap-sub">Click a date to manage it.</div>
+                <div class="dap-sel" id="dapSel">
+                  <div class="dap-sel-label">Selected Date</div>
+                  <div class="dap-sel-val" id="dapVal">—</div>
+                  <div class="dap-status" id="dapStatus"></div>
+                </div>
+                <div class="dap-actions" id="dapActions" style="display:none">
+                  <button class="btn btn-red btn-sm" id="dapBlock" onclick="blockDate()">🔒 Block This Date</button>
+                  <button class="btn btn-green btn-sm" id="dapUnblock" onclick="unblockDate()">🔓 Unblock This Date</button>
+                </div>
+                <div class="range-block">
+                  <h4>📅 Block / Unblock Range</h4>
+                  <div class="range-row"><div><label>From</label><input type="date" id="rFrom"/></div><div><label>To</label><input type="date" id="rTo"/></div></div>
+                  <input class="range-reason" type="text" id="rReason" placeholder="Reason (e.g. Booked, Maintenance)…"/>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn btn-red btn-sm" style="flex:1" onclick="blockRange()">🔒 Block</button>
+                    <button class="btn btn-green btn-sm" style="flex:1" onclick="unblockRange()">🔓 Unblock</button>
+                  </div>
+                </div>
+                <div class="blocked-list">
+                  <div class="blocked-list-title">Blocked Dates <span id="blockedCount" style="font-weight:400;color:var(--gray-lt)">(0)</span></div>
+                  <div id="blockedList"><div class="empty-state">No blocked dates.</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="availPlaceholder" style="text-align:center;padding:60px 20px;color:var(--gray-lt)">
+          <div style="font-size:40px;margin-bottom:12px">📅</div>
+          <div style="font-size:14px;font-weight:600;color:var(--dark);margin-bottom:4px">Select a Property</div>
+          <div style="font-size:13px">Choose one of your shortlets above to manage its availability.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUESTS -->
+    <div class="view" id="view-requests">
+      <div class="panel">
+        <div class="panel-head"><h2>Booking Requests</h2>
+          <select class="prop-sel-box" id="reqFilter" style="min-width:160px" onchange="filterReqs()">
+            <option value="all">All Status</option><option value="new">New</option>
+            <option value="contacted">Contacted</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table"><thead><tr><th>Guest</th><th>Property</th><th>Check-in</th><th>Guests</th><th>Status</th><th></th></tr></thead>
+          <tbody id="reqsBody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE SETTINGS -->
+    <div class="view" id="view-profile">
+      <div class="panel">
+        <div class="panel-head"><h2>Agency Profile</h2></div>
+        <div class="panel-body">
+          <div class="profile-grid">
+            <div class="profile-avatar-wrap">
+              <div class="profile-avatar" id="profileAvatar">A</div>
+              <div style="font-size:12px;color:var(--gray);margin-top:8px">Agency Logo URL:</div>
+              <input type="url" id="pLogo" placeholder="https://…" style="margin-top:6px;padding:7px 10px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;width:100%" oninput="previewLogo(this.value)"/>
+            </div>
+            <div>
+              <div class="form-grid">
+                <div class="form-group"><label>Agency Name</label><input type="text" id="pAgencyName"/></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="pFullName"/></div>
+                <div class="form-group"><label>Phone</label><input type="tel" id="pPhone"/></div>
+                <div class="form-group"><label>WhatsApp</label><input type="tel" id="pWa"/></div>
+                <div class="form-group"><label>City</label><select id="pCity"><option>Lagos</option><option>Abuja</option><option>Port Harcourt</option><option>Ibadan</option><option>Benin City</option></select></div>
+                <div class="form-group"><label>Agency Slug <span style="font-weight:400;color:var(--gray-lt);text-transform:none;letter-spacing:0">(URL-safe, no spaces)</span></label><input type="text" id="pSlug" placeholder="e.g. lagos-prime-stays"/></div>
+                <div class="form-group full"><label>Bio / Description</label><textarea id="pBio" rows="3" placeholder="Tell clients about your agency…"></textarea></div>
+              </div>
+              <div style="margin-top:16px;display:flex;justify-content:flex-end">
+                <button class="btn btn-orange" onclick="saveProfile()">Save Profile</button>
+              </div>
+            </div>
+          </div>
+          <div class="share-link-section" id="profileShareSection" style="display:none;margin-top:0">
+            <h3>🔗 Your Shareable Agency Link</h3>
+            <p>Send this to anyone — they'll see all your shortlet listings, your branding, and can book directly.</p>
+            <div class="link-copy-row">
+              <div class="link-display" id="profileLinkDisplay">—</div>
+              <button class="copy-btn" onclick="copyShareLink()">📋 Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="supabase-config.js"></script>
+<script>
+// ── STATE ──
+let myProfile = null;
+let myProps = [];
+let amenTags = [];
+let calYear, calMonth, selDate = null;
+let blockedSet = new Set(), blockedMeta = {}, selAvailPropId = null;
+let allReqs = [];
+
+// ── INIT ──
+(async()=>{
+  const auth = await requireAuth(['agency']);
+  if(!auth) return;
+  myProfile = auth.profile;
+  populateSidebar();
+  loadDashboard();
+  // Preload props for availability selector
+  loadMyProps();
+})();
+
+function populateSidebar(){
+  const initials = (myProfile.agency_name||myProfile.full_name||'A')[0].toUpperCase();
+  document.getElementById('sidebarInitial').textContent = initials;
+  document.getElementById('sidebarName').textContent = myProfile.full_name||'—';
+  document.getElementById('sidebarAgency').textContent = myProfile.agency_name||'My Agency';
+  updateShareLink();
+}
+
+function getShareLink(){
+  const slug = myProfile?.agency_slug;
+  if(!slug) return null;
+  return window.location.origin + '/agency.html?slug=' + slug;
+}
+
+function updateShareLink(){
+  const link = getShareLink();
+  const box = document.getElementById('shareLinkBox');
+  const banner = document.getElementById('shareBanner');
+  const bannerDisplay = document.getElementById('bannerLinkDisplay');
+  const display = document.getElementById('shareLinkDisplay');
+  const psec = document.getElementById('profileShareSection');
+  const pdisplay = document.getElementById('profileLinkDisplay');
+  if(link){
+    box.style.display='flex'; display.textContent=link.replace(/^https?:\/\//,'');
+    banner.style.display='block'; bannerDisplay.textContent=link;
+    if(psec){ psec.style.display='block'; pdisplay.textContent=link; }
+  }
+}
+
+function copyShareLink(){
+  const link = getShareLink();
+  if(!link){ toast('Set your agency slug in Profile first','error'); return; }
+  navigator.clipboard.writeText(link).then(()=>toast('Link copied to clipboard!','success'));
+}
+
+// ── NAV ──
+const viewTitles={dashboard:'Dashboard','my-properties':'My Shortlets','add-property':'Add Shortlet',availability:'Availability',requests:'Booking Requests',profile:'Agency Profile'};
+function switchView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-view="${id}"]`)?.classList.add('active');
+  document.getElementById('topbarTitle').textContent=viewTitles[id]||'';
+  if(id==='my-properties') renderMyProps();
+  if(id==='requests') loadReqs();
+  if(id==='availability') populateAvailSel();
+  if(id==='profile') loadProfile();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(el=>el.addEventListener('click',()=>switchView(el.dataset.view)));
+
+// ── TOAST ──
+function toast(msg,type='info'){
+  const wrap=document.getElementById('toastWrap');
+  const el=document.createElement('div'); el.className=`toast ${type}`;
+  el.innerHTML=`<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`;
+  wrap.appendChild(el); requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),400)},3000);
+}
+
+const fmtDate=d=>d?new Date(d).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'}):'—';
+const fmtNaira=n=>'₦'+Number(n).toLocaleString('en-NG');
+function badgeHtml(s){const m={new:'badge-new',contacted:'badge-contacted',completed:'badge-completed',cancelled:'badge-cancelled'};return `<span class="badge ${m[s]||'badge-inactive'}">${s||'—'}</span>`}
+
+// ── DASHBOARD ──
+async function loadDashboard(){
+  const [pr,rr,br] = await Promise.all([
+    supabaseClient.from('properties').select('id,is_active').eq('owner_id',myProfile.id),
+    supabaseClient.from('inspection_requests').select('id,status,full_name,property_title,preferred_date').eq('owner_id',myProfile.id).order('created_at',{ascending:false}),
+    supabaseClient.from('blocked_dates').select('id,property_id').in('property_id',(await supabaseClient.from('properties').select('id').eq('owner_id',myProfile.id)).data?.map(p=>p.id)||[])
+  ]);
+  const active=(pr.data||[]).filter(p=>p.is_active).length;
+  const newR=(rr.data||[]).filter(r=>r.status==='new').length;
+  const comp=(rr.data||[]).filter(r=>r.status==='completed').length;
+  document.getElementById('statProps').textContent=active;
+  document.getElementById('statNewReqs').textContent=newR;
+  document.getElementById('statBlockedDates').textContent=(br.data||[]).length;
+  document.getElementById('statCompleted').textContent=comp;
+  allReqs=rr.data||[];
+  const recent=allReqs.slice(0,6);
+  document.getElementById('dashReqs').innerHTML=recent.length?recent.map(r=>`
+    <tr><td><strong>${r.full_name}</strong></td><td>${r.property_title||'—'}</td>
+    <td>${fmtDate(r.preferred_date)}</td><td>${badgeHtml(r.status)}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="switchView('requests')">Manage</button></td></tr>`).join('')
+    :`<tr><td colspan="5" class="empty-state">No booking requests yet.</td></tr>`;
+  document.getElementById('shareBanner').style.display=myProfile.agency_slug?'block':'none';
+}
+
+// ── MY PROPERTIES ──
+async function loadMyProps(){
+  const {data}=await supabaseClient.from('properties').select('*').eq('owner_id',myProfile.id).order('created_at',{ascending:false});
+  myProps=data||[];
+  renderMyProps();
+  populateAvailSel();
+}
+function renderMyProps(filter=''){
+  const filtered=filter?myProps.filter(p=>(p.title+p.city).toLowerCase().includes(filter.toLowerCase())):myProps;
+  document.getElementById('myPropsBody').innerHTML=filtered.length?filtered.map(p=>`
+    <tr>
+      <td><img class="prop-thumb" src="${p.cover_image||''}" alt="" onerror="this.style.display='none'"/></td>
+      <td><strong>${p.title}</strong><br/><span style="font-size:11px;color:var(--gray)">${p.category}</span></td>
+      <td>${p.city}</td>
+      <td>${fmtNaira(p.price)} <span style="font-size:11px;color:var(--gray-lt)">${p.price_label||'/ night'}</span></td>
+      <td>🛏 ${p.bedrooms}</td>
+      <td>${p.is_active?'<span class="badge badge-active">Active</span>':'<span class="badge badge-inactive">Hidden</span>'}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="editProp('${p.id}')">✏️</button>
+        <button class="btn btn-purple btn-sm" onclick="goAvail('${p.id}')">📅</button>
+        <button class="btn btn-sm" style="${p.is_active?'background:#FEE2E2;color:var(--red)':'background:#D1FAE5;color:var(--green)'}" onclick="toggleProp('${p.id}',${p.is_active})">${p.is_active?'Hide':'Show'}</button>
+        <a href="property-details.html?id=${p.id}" target="_blank" class="btn btn-ghost btn-sm">👁</a>
+      </td>
+    </tr>`).join(''):`<tr><td colspan="7" class="empty-state">No shortlets yet. <a href="#" onclick="switchView('add-property')" style="color:var(--orange);font-weight:600">Add one</a></td></tr>`;
+}
+function filterMyProps(){ renderMyProps(document.getElementById('propSearch').value); }
+async function toggleProp(id,cur){
+  await supabaseClient.from('properties').update({is_active:!cur}).eq('id',id);
+  toast(!cur?'Listing is now visible':'Listing is now hidden','success');
+  loadMyProps();
+}
+function goAvail(id){ switchView('availability'); setTimeout(()=>{document.getElementById('availSel').value=id;onAvailSel(id)},200); }
+
+// ── ADD / EDIT FORM ──
+let amenInput;
+window.addEventListener('DOMContentLoaded',()=>{
+  amenInput=document.createElement('input');
+  amenInput.className='tag-input'; amenInput.id='amenInput'; amenInput.placeholder='e.g. PS5, Smart TV…';
+  amenInput.addEventListener('keydown',e=>{ if((e.key==='Enter'||e.key===',')&&amenInput.value.trim()){e.preventDefault();addAmen(amenInput.value.trim());amenInput.value='';} });
+  document.getElementById('amenWrap').appendChild(amenInput);
+});
+function addAmen(v){ if(!amenTags.includes(v)){amenTags.push(v);renderAmens();} }
+function removeAmen(v){ amenTags=amenTags.filter(t=>t!==v); renderAmens(); }
+function renderAmens(){
+  const wrap=document.getElementById('amenWrap'); wrap.innerHTML='';
+  amenTags.forEach(t=>{const p=document.createElement('div');p.className='tag-pill';p.innerHTML=`${t}<button onclick="removeAmen('${t.replace(/'/g,"\\'")}')" type="button">×</button>`;wrap.appendChild(p);});
+  if(!amenInput){ amenInput=document.getElementById('amenInput'); }
+  wrap.appendChild(amenInput);
+}
+function previewImg(url){ const img=document.getElementById('coverPreview'); if(url){img.src=url;img.style.display='block';}else img.style.display='none'; }
+function resetForm(){
+  document.getElementById('propForm').reset(); document.getElementById('editId').value='';
+  document.getElementById('addPropTitle').textContent='Add New Shortlet';
+  document.getElementById('propSubmitBtn').textContent='Save Shortlet';
+  amenTags=[]; renderAmens(); document.getElementById('coverPreview').style.display='none';
+}
+async function editProp(id){
+  const {data}=await supabaseClient.from('properties').select('*').eq('id',id).single();
+  if(!data){toast('Could not load','error');return;}
+  switchView('add-property');
+  document.getElementById('addPropTitle').textContent='Edit Shortlet';
+  document.getElementById('propSubmitBtn').textContent='Update Shortlet';
+  document.getElementById('editId').value=data.id;
+  document.getElementById('fTitle').value=data.title||'';
+  document.getElementById('fCategory').value=data.category||'Studio Apartment';
+  document.getElementById('fCity').value=data.city||'Lagos';
+  document.getElementById('fAddress').value=data.address||'';
+  document.getElementById('fFullLocation').value=data.full_location||'';
+  document.getElementById('fPrice').value=data.price||'';
+  document.getElementById('fPriceLabel').value=data.price_label||'/ night';
+  document.getElementById('fBeds').value=data.bedrooms||1;
+  document.getElementById('fBaths').value=data.bathrooms||1;
+  document.getElementById('fSqft').value=data.sqft||'';
+  document.getElementById('fGuests').value=data.max_guests||2;
+  document.getElementById('fCover').value=data.cover_image||'';
+  previewImg(data.cover_image||'');
+  document.getElementById('fGallery').value=(data.gallery_images||[]).join('\n');
+  document.getElementById('fVideo').value=data.video_url||'';
+  document.getElementById('fOverview').value=data.overview||'';
+  document.getElementById('fRules').value=(data.documents||[]).join('\n');
+  document.getElementById('fTerms').value=(data.transaction_terms||[]).join('\n');
+  document.getElementById('fAgentName').value=data.agent_name||'';
+  document.getElementById('fAgentPhone').value=data.agent_phone||'';
+  document.getElementById('fAgentWa').value=data.agent_whatsapp||'';
+  document.getElementById('fAgentAvatar').value=data.agent_avatar||'';
+  document.getElementById('fFeatured').checked=data.featured||false;
+  document.getElementById('fVerified').checked=data.verified||false;
+  amenTags=data.amenities||[]; renderAmens();
+}
+document.getElementById('propForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const btn=document.getElementById('propSubmitBtn');
+  btn.innerHTML='<span class="spinner"></span> Saving…'; btn.disabled=true;
+  const editId=document.getElementById('editId').value;
+  const payload={
+    title:document.getElementById('fTitle').value.trim(),
+    listing_type:'shortlet',
+    category:document.getElementById('fCategory').value,
+    city:document.getElementById('fCity').value,
+    address:document.getElementById('fAddress').value.trim(),
+    full_location:document.getElementById('fFullLocation').value.trim(),
+    price:parseFloat(document.getElementById('fPrice').value),
+    price_label:document.getElementById('fPriceLabel').value,
+    bedrooms:parseInt(document.getElementById('fBeds').value)||1,
+    bathrooms:parseInt(document.getElementById('fBaths').value)||1,
+    sqft:parseFloat(document.getElementById('fSqft').value)||null,
+    max_guests:parseInt(document.getElementById('fGuests').value)||2,
+    cover_image:document.getElementById('fCover').value.trim()||null,
+    gallery_images:document.getElementById('fGallery').value.split('\n').map(u=>u.trim()).filter(Boolean),
+    video_url:document.getElementById('fVideo').value.trim()||null,
+    overview:document.getElementById('fOverview').value.trim(),
+    amenities:amenTags,
+    documents:document.getElementById('fRules').value.split('\n').map(u=>u.trim()).filter(Boolean),
+    transaction_terms:document.getElementById('fTerms').value.split('\n').map(u=>u.trim()).filter(Boolean),
+    agent_name:document.getElementById('fAgentName').value.trim(),
+    agent_phone:document.getElementById('fAgentPhone').value.trim(),
+    agent_whatsapp:document.getElementById('fAgentWa').value.trim(),
+    agent_avatar:document.getElementById('fAgentAvatar').value.trim()||null,
+    featured:document.getElementById('fFeatured').checked,
+    verified:document.getElementById('fVerified').checked,
+    is_active:true, owner_id:myProfile.id
+  };
+  const {error}=editId
+    ?await supabaseClient.from('properties').update(payload).eq('id',editId)
+    :await supabaseClient.from('properties').insert(payload);
+  btn.innerHTML=editId?'Update Shortlet':'Save Shortlet'; btn.disabled=false;
+  if(error){toast('Error: '+error.message,'error');return;}
+  toast(editId?'Shortlet updated!':'Shortlet added!','success');
+  resetForm(); await loadMyProps(); switchView('my-properties');
+});
+
+// ── AVAILABILITY ──
+function populateAvailSel(){
+  const sel=document.getElementById('availSel');
+  sel.innerHTML=`<option value="">— Select a property —</option>`;
+  myProps.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=`${p.title} (${p.city})`;sel.appendChild(o);});
+}
+document.getElementById('availSel').addEventListener('change',function(){onAvailSel(this.value);});
+async function onAvailSel(pid){
+  selAvailPropId=pid;
+  if(!pid){document.getElementById('availInner').style.display='none';document.getElementById('availPlaceholder').style.display='block';return;}
+  document.getElementById('availInner').style.display='block';
+  document.getElementById('availPlaceholder').style.display='none';
+  const now=new Date(); calYear=now.getFullYear(); calMonth=now.getMonth();
+  await reloadBlocked();
+}
+async function reloadBlocked(){
+  if(!selAvailPropId) return;
+  const {data}=await supabaseClient.from('blocked_dates').select('id,blocked_date,reason').eq('property_id',selAvailPropId);
+  blockedSet=new Set((data||[]).map(r=>r.blocked_date));
+  blockedMeta={}; (data||[]).forEach(r=>{blockedMeta[r.blocked_date]={id:r.id,reason:r.reason};});
+  renderCal(); renderBlockedList();
+}
+function renderCal(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const fd=new Date(calYear,calMonth,1).getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calTitle').textContent=`${months[calMonth]} ${calYear}`;
+  let h=''; for(let i=0;i<fd;i++) h+=`<div class="cal-cell empty"></div>`;
+  for(let d=1;d<=dim;d++){
+    const dt=new Date(calYear,calMonth,d); const ds=dt.toISOString().split('T')[0];
+    const past=dt<today; const tod=dt.getTime()===today.getTime(); const bl=blockedSet.has(ds); const sel=selDate===ds;
+    let cls='cal-cell';
+    if(past)cls+=' past'; else if(tod)cls+=' today'; else if(bl)cls+=' blocked'; else cls+=' avail';
+    if(sel)cls+=' selected';
+    h+=`<div class="${cls}" onclick="selectDate('${ds}')">${d}</div>`;
+  }
+  document.getElementById('calDays').innerHTML=h;
+}
+function selectDate(ds){
+  selDate=ds; renderCal();
+  const label=new Date(ds+'T12:00:00').toLocaleDateString('en-NG',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dapSel').style.display='block';
+  document.getElementById('dapVal').textContent=label;
+  const bl=blockedSet.has(ds);
+  const st=document.getElementById('dapStatus'); st.className='dap-status '+(bl?'blocked':'avail');
+  st.textContent=bl?`🔒 Blocked — ${blockedMeta[ds]?.reason||'No reason'}`:'✅ Available';
+  document.getElementById('dapActions').style.display='flex';
+  document.getElementById('dapBlock').style.display=bl?'none':'flex';
+  document.getElementById('dapUnblock').style.display=bl?'flex':'none';
+}
+async function blockDate(){
+  if(!selDate||!selAvailPropId) return;
+  const reason=prompt('Reason for blocking?','Booked')||'Booked';
+  const {error}=await supabaseClient.from('blocked_dates').upsert({property_id:selAvailPropId,blocked_date:selDate,reason},{onConflict:'property_id,blocked_date'});
+  if(error){toast('Failed','error');return;}
+  toast('Date blocked','success'); await reloadBlocked(); selectDate(selDate);
+}
+async function unblockDate(){
+  if(!selDate||!selAvailPropId) return;
+  const meta=blockedMeta[selDate]; if(!meta){toast('Not blocked','info');return;}
+  const {error}=await supabaseClient.from('blocked_dates').delete().eq('id',meta.id);
+  if(error){toast('Failed','error');return;}
+  toast('Date unblocked','success'); selDate=null;
+  document.getElementById('dapSel').style.display='none'; document.getElementById('dapActions').style.display='none';
+  await reloadBlocked();
+}
+async function blockRange(){
+  const f=document.getElementById('rFrom').value,t=document.getElementById('rTo').value;
+  const r=document.getElementById('rReason').value.trim()||'Blocked';
+  if(!f||!t||!selAvailPropId){toast('Select a property and date range','error');return;}
+  if(f>t){toast('End must be after start','error');return;}
+  const dates=[]; let cur=new Date(f+'T12:00:00'); const end=new Date(t+'T12:00:00');
+  while(cur<=end){dates.push({property_id:selAvailPropId,blocked_date:cur.toISOString().split('T')[0],reason:r});cur.setDate(cur.getDate()+1);}
+  const {error}=await supabaseClient.from('blocked_dates').upsert(dates,{onConflict:'property_id,blocked_date'});
+  if(error){toast('Failed','error');return;}
+  toast(`Blocked ${dates.length} date${dates.length>1?'s':''}!`,'success');
+  document.getElementById('rFrom').value=''; document.getElementById('rTo').value='';
+  await reloadBlocked();
+}
+async function unblockRange(){
+  const f=document.getElementById('rFrom').value,t=document.getElementById('rTo').value;
+  if(!f||!t||!selAvailPropId){toast('Select a property and date range','error');return;}
+  const {error}=await supabaseClient.from('blocked_dates').delete().eq('property_id',selAvailPropId).gte('blocked_date',f).lte('blocked_date',t);
+  if(error){toast('Failed','error');return;}
+  toast('Range unblocked!','success');
+  document.getElementById('rFrom').value=''; document.getElementById('rTo').value='';
+  await reloadBlocked();
+}
+function renderBlockedList(){
+  const sorted=Object.entries(blockedMeta).sort((a,b)=>a[0].localeCompare(b[0]));
+  document.getElementById('blockedCount').textContent=`(${sorted.length})`;
+  document.getElementById('blockedList').innerHTML=sorted.length?sorted.map(([ds,m])=>`
+    <div class="blocked-item">
+      <div><div class="blocked-item-date">${fmtDate(ds)}</div><div class="blocked-item-reason">${m.reason||'—'}</div></div>
+      <button class="unblock-btn" onclick="quickUnblock('${m.id}','${ds}')">🔓</button>
+    </div>`).join(''):`<div class="empty-state">No blocked dates. All days are open.</div>`;
+}
+async function quickUnblock(id,ds){
+  await supabaseClient.from('blocked_dates').delete().eq('id',id);
+  toast('Unblocked','success'); if(selDate===ds){selDate=null;document.getElementById('dapSel').style.display='none';document.getElementById('dapActions').style.display='none';}
+  await reloadBlocked();
+}
+document.getElementById('calPrev').addEventListener('click',()=>{calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();});
+document.getElementById('calNext').addEventListener('click',()=>{calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();});
+
+// ── REQUESTS ──
+async function loadReqs(){
+  const {data}=await supabaseClient.from('inspection_requests').select('*').eq('owner_id',myProfile.id).order('created_at',{ascending:false});
+  allReqs=data||[];
+  renderReqs(allReqs);
+}
+function filterReqs(){
+  const s=document.getElementById('reqFilter').value;
+  renderReqs(s==='all'?allReqs:allReqs.filter(r=>r.status===s));
+}
+function renderReqs(reqs){
+  document.getElementById('reqsBody').innerHTML=reqs.length?reqs.map(r=>`
+    <tr>
+      <td><strong>${r.full_name}</strong><br/><span style="font-size:11px;color:var(--gray)">${r.phone||''}</span></td>
+      <td>${r.property_title||'—'}</td><td>${fmtDate(r.preferred_date)}</td>
+      <td>${r.buyer_type||'—'}</td><td>${badgeHtml(r.status)}</td>
+      <td><select class="prop-sel-box" onchange="updateReqStatus('${r.id}',this.value)" style="font-size:12px;padding:5px 8px;min-width:0">
+        <option value="new" ${r.status==='new'?'selected':''}>New</option>
+        <option value="contacted" ${r.status==='contacted'?'selected':''}>Contacted</option>
+        <option value="completed" ${r.status==='completed'?'selected':''}>Completed</option>
+        <option value="cancelled" ${r.status==='cancelled'?'selected':''}>Cancelled</option>
+      </select></td>
+    </tr>`).join(''):`<tr><td colspan="6" class="empty-state">No booking requests yet.</td></tr>`;
+}
+async function updateReqStatus(id,status){
+  await supabaseClient.from('inspection_requests').update({status}).eq('id',id);
+  toast('Status updated to "'+status+'"','success');
+  loadReqs();
+}
+
+// ── PROFILE ──
+async function loadProfile(){
+  document.getElementById('pAgencyName').value=myProfile.agency_name||'';
+  document.getElementById('pFullName').value=myProfile.full_name||'';
+  document.getElementById('pPhone').value=myProfile.agency_phone||'';
+  document.getElementById('pWa').value=myProfile.agency_whatsapp||'';
+  document.getElementById('pCity').value=myProfile.agency_city||'Lagos';
+  document.getElementById('pSlug').value=myProfile.agency_slug||'';
+  document.getElementById('pBio').value=myProfile.agency_bio||'';
+  document.getElementById('pLogo').value=myProfile.agency_logo||'';
+  previewLogo(myProfile.agency_logo||'');
+  updateShareLink();
+}
+function previewLogo(url){
+  const av=document.getElementById('profileAvatar');
+  if(url){av.innerHTML=`<img src="${url}" alt="Logo"/>`;} else {av.textContent=(myProfile.agency_name||'A')[0].toUpperCase();}
+}
+async function saveProfile(){
+  const slug=document.getElementById('pSlug').value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const updates={
+    full_name:document.getElementById('pFullName').value.trim(),
+    agency_name:document.getElementById('pAgencyName').value.trim(),
+    agency_phone:document.getElementById('pPhone').value.trim(),
+    agency_whatsapp:document.getElementById('pWa').value.trim(),
+    agency_city:document.getElementById('pCity').value,
+    agency_slug:slug,
+    agency_bio:document.getElementById('pBio').value.trim(),
+    agency_logo:document.getElementById('pLogo').value.trim()||null
+  };
+  const {error}=await supabaseClient.from('profiles').update(updates).eq('id',myProfile.id);
+  if(error){toast('Error: '+error.message,'error');return;}
+  Object.assign(myProfile,updates);
+  populateSidebar(); updateShareLink();
+  toast('Profile saved!','success');
+}
+</script>
+</body>
+</html>

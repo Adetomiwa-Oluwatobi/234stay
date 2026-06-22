@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agency Profile – 234Stays</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#E07B39;--orange-lt:#F5924A;--orange-bg:#FEF3EB;
+  --dark:#1A1A2E;--text:#2D2D2D;--gray:#6B7280;--gray-lt:#9CA3AF;
+  --border:#E5E7EB;--bg:#F7F7F7;--white:#fff;
+  --green:#059669;--green-bg:#D1FAE5;--purple:#7C3AED;--purple-bg:#EDE9FE;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--white);color:var(--text);font-size:15px}
+nav{background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 80px;height:64px;position:sticky;top:0;z-index:100}
+.logo{font-family:'DM Serif Display',serif;font-size:22px;color:var(--dark)}
+.logo span{color:var(--orange)}
+nav ul{list-style:none;display:flex;gap:28px}
+nav ul a{text-decoration:none;color:var(--text);font-size:14px;transition:color .2s}
+nav ul a:hover{color:var(--orange)}
+
+/* HERO */
+.agency-hero{
+  background:linear-gradient(135deg,var(--dark) 0%,#2D2D4E 100%);
+  padding:64px 80px;display:flex;align-items:center;gap:48px;
+}
+.agency-avatar{width:110px;height:110px;border-radius:20px;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:48px;color:#fff;flex-shrink:0;overflow:hidden;border:3px solid rgba(255,255,255,.15)}
+.agency-avatar img{width:100%;height:100%;object-fit:cover}
+.agency-info{flex:1}
+.agency-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.4px;margin-bottom:10px}
+.agency-name{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:6px}
+.agency-bio{font-size:14px;color:rgba(255,255,255,.65);max-width:520px;line-height:1.7;margin-bottom:20px}
+.agency-meta{display:flex;gap:20px;flex-wrap:wrap}
+.agency-meta-item{display:flex;align-items:center;gap:7px;color:rgba(255,255,255,.75);font-size:13px;font-weight:500}
+.agency-meta-icon{font-size:16px}
+.agency-cta-row{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.btn-wa{background:#25D366;color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:background .2s}
+.btn-wa:hover{background:#1da851}
+.btn-call{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .2s}
+.btn-call:hover{background:rgba(255,255,255,.2)}
+
+/* STATS STRIP */
+.stats-strip{background:var(--orange);padding:20px 80px;display:flex;gap:48px;flex-wrap:wrap}
+.strip-stat{text-align:center;color:#fff}
+.strip-val{font-family:'DM Serif Display',serif;font-size:28px}
+.strip-lbl{font-size:12px;opacity:.8;margin-top:2px}
+
+/* LISTINGS SECTION */
+.listings-section{padding:56px 80px;background:var(--bg)}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.section-head h2{font-family:'DM Serif Display',serif;font-size:28px;color:var(--dark)}
+.section-head p{font-size:13px;color:var(--gray-lt);margin-top:4px}
+.filter-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.f-btn{padding:8px 20px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);font-size:13px;font-weight:500;cursor:pointer;color:var(--gray);transition:all .2s;font-family:'DM Sans',sans-serif}
+.f-btn.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.f-btn:hover:not(.active){border-color:var(--orange);color:var(--orange)}
+
+/* CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.prop-card{background:var(--white);border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:transform .25s,box-shadow .25s;cursor:pointer;text-decoration:none;color:inherit;display:block}
+.prop-card:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.card-img{position:relative;height:210px;overflow:hidden}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.prop-card:hover .card-img img{transform:scale(1.04)}
+.tag{position:absolute;top:12px;left:12px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:5px;letter-spacing:.4px;text-transform:uppercase;background:var(--purple);color:#fff}
+.avail-badge{position:absolute;bottom:12px;left:12px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:4px;background:rgba(26,107,69,.92);color:#fff}
+.card-body{padding:16px}
+.prop-name{font-weight:700;font-size:15px;color:var(--dark);margin-bottom:4px}
+.prop-addr{font-size:12px;color:var(--gray);margin-bottom:10px}
+.amenity-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.apill{background:var(--bg);color:var(--text);font-size:10px;font-weight:500;padding:3px 8px;border-radius:12px}
+.prop-meta{display:flex;gap:14px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:12px}
+.meta-item{font-size:12px;color:var(--gray);display:flex;align-items:center;gap:4px}
+.card-foot{display:flex;align-items:center;justify-content:space-between}
+.prop-price{font-family:'DM Serif Display',serif;font-size:20px;color:var(--orange)}
+.price-per{font-size:11px;color:var(--gray-lt)}
+.book-btn{background:var(--orange-bg);color:var(--orange);border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.book-btn:hover{background:var(--orange);color:#fff}
+.empty-state{text-align:center;padding:60px 20px;color:var(--gray-lt);font-size:14px}
+
+/* NOT FOUND */
+.not-found{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 20px;text-align:center;gap:16px}
+.not-found h2{font-family:'DM Serif Display',serif;font-size:28px;color:var(--dark)}
+.not-found p{color:var(--gray);font-size:14px;max-width:380px}
+.not-found a{color:var(--orange);font-weight:600;text-decoration:none;font-size:14px}
+
+/* CTA */
+.agency-cta{background:var(--orange-bg);padding:64px 80px;text-align:center}
+.agency-cta h2{font-family:'DM Serif Display',serif;font-size:30px;color:var(--dark);margin-bottom:10px}
+.agency-cta p{font-size:14px;color:var(--gray);margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-orange{background:var(--orange);color:#fff;padding:12px 30px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;transition:background .2s}
+.btn-orange:hover{background:var(--orange-lt)}
+
+footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:40px 80px 24px}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:20px;display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-top:32px}
+.wa-fab{position:fixed;bottom:28px;right:28px;z-index:999;background:#25D366;color:#fff;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,.4);transition:transform .2s}
+.wa-fab:hover{transform:scale(1.1)}
+
+@media(max-width:1024px){
+  nav,.agency-hero,.stats-strip,.listings-section,.agency-cta,footer{padding-left:24px;padding-right:24px}
+  .cards-grid{grid-template-columns:1fr 1fr}
+  .agency-hero{flex-direction:column;gap:24px}
+  .stats-strip{gap:24px}
+}
+@media(max-width:640px){
+  nav ul{display:none}
+  .cards-grid{grid-template-columns:1fr}
+  .agency-name{font-size:26px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><a href="index.html" style="text-decoration:none;color:inherit">234<span>Stays</span></a></div>
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="index.html">Shortlets</a></li>
+    <li><a href="login.html">Agency Login</a></li>
+  </ul>
+</nav>
+
+<!-- AGENCY HERO (populated by JS) -->
+<div id="heroSection" style="display:none">
+  <div class="agency-hero">
+    <div class="agency-avatar" id="agencyAvatar">A</div>
+    <div class="agency-info">
+      <div class="agency-tag">🏢 Verified Shortlet Agency · 234Stays</div>
+      <h1 class="agency-name" id="agencyName">—</h1>
+      <p class="agency-bio" id="agencyBio">—</p>
+      <div class="agency-meta">
+        <div class="agency-meta-item" id="agencyCity" style="display:none"><span class="agency-meta-icon">📍</span> <span id="agencyCityVal"></span></div>
+        <div class="agency-meta-item" id="agencyPropCount"><span class="agency-meta-icon">🏠</span> <span id="agencyPropCountVal">0 shortlets</span></div>
+        <div class="agency-meta-item"><span class="agency-meta-icon">✅</span> Verified Agency</div>
+      </div>
+      <div class="agency-cta-row">
+        <a href="#" class="btn-wa" id="waBtn" style="display:none">💬 WhatsApp Us</a>
+        <a href="#" class="btn-call" id="callBtn" style="display:none">📞 Call Now</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-strip">
+    <div class="strip-stat"><div class="strip-val" id="statListings">0</div><div class="strip-lbl">Active Shortlets</div></div>
+    <div class="strip-stat"><div class="strip-val" id="statCities">0</div><div class="strip-lbl">Cities Covered</div></div>
+    <div class="strip-stat"><div class="strip-val">4.8 ★</div><div class="strip-lbl">Average Rating</div></div>
+    <div class="strip-stat"><div class="strip-val">24/7</div><div class="strip-lbl">Support Available</div></div>
+  </div>
+</div>
+
+<div class="not-found" id="notFound" style="display:none">
+  <div style="font-size:52px">🏚</div>
+  <h2>Agency Not Found</h2>
+  <p>This agency profile doesn't exist or hasn't set up their page yet.</p>
+  <a href="index.html">← Browse All Shortlets</a>
+</div>
+
+<div id="loadingState" style="text-align:center;padding:80px 20px;color:var(--gray-lt);font-size:14px">Loading agency profile…</div>
+
+<section class="listings-section" id="listingsSection" style="display:none">
+  <div class="section-head">
+    <div>
+      <h2 id="listingsSectionTitle">Our Shortlets</h2>
+      <p id="listingsSectionSub">Browse all available apartments</p>
+    </div>
+  </div>
+  <div class="filter-row" id="filterRow">
+    <button class="f-btn active" data-city="all">All</button>
+  </div>
+  <div class="cards-grid" id="cardsGrid">
+    <div class="empty-state">Loading…</div>
+  </div>
+</section>
+
+<div id="ctaSection" style="display:none">
+  <section class="agency-cta">
+    <h2 id="ctaTitle">Book a Stay with This Agency</h2>
+    <p id="ctaDesc">Get in touch directly to confirm availability and book your preferred apartment.</p>
+    <div class="cta-btns">
+      <a href="#" class="btn-orange" id="ctaWaBtn" style="display:none">💬 WhatsApp Now</a>
+      <a href="index.html" class="btn-orange" style="background:transparent;border:2px solid var(--border);color:var(--dark)">Browse All Shortlets</a>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px">
+    <div class="logo">234<span style="color:var(--orange)">Stays</span></div>
+    <div style="font-size:13px;color:rgba(255,255,255,.4)">Nigeria's premium shortlet platform</div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 234Stays. All rights reserved.</span>
+    <span><a href="index.html" style="color:rgba(255,255,255,.4);text-decoration:none">Back to Homepage</a></span>
+  </div>
+</footer>
+
+<a href="#" class="wa-fab" id="waFab" style="display:none">💬</a>
+
+<script src="supabase-config.js"></script>
+<script>
+const amenityIcons={'ps5':'🎮','playstation':'🎮','smart tv':'📺','netflix':'🎬','wi-fi':'📶','wifi':'📶','fibre':'📶','internet':'📶','air conditioning':'❄️','ac':'❄️','pool':'🏊','swimming':'🏊','gym':'🏋','generator':'⚡','electricity':'⚡','cctv':'📷','kitchen':'🍳','parking':'🚗','balcony':'🌇'};
+function getIcon(a){const l=a.toLowerCase();for(const[k,v]of Object.entries(amenityIcons))if(l.includes(k))return v;return '✓'}
+function fmtNaira(n){return '₦'+Number(n).toLocaleString('en-NG')}
+
+let agencyProfile=null;
+let allProps=[];
+
+async function init(){
+  const params=new URLSearchParams(window.location.search);
+  const slug=params.get('slug');
+  if(!slug){showNotFound();return;}
+
+  // Load profile by slug
+  const {data:profile,error:pe}=await supabaseClient.from('profiles').select('*').eq('agency_slug',slug).eq('is_active',true).single();
+  if(pe||!profile){showNotFound();return;}
+  agencyProfile=profile;
+
+  // Load their active properties
+  const {data:props}=await supabaseClient.from('properties').select('*').eq('owner_id',profile.id).eq('is_active',true).eq('listing_type','shortlet').order('featured',{ascending:false}).order('created_at',{ascending:false});
+  allProps=props||[];
+
+  // Update page meta
+  document.title=`${profile.agency_name||'Agency'} – 234Stays`;
+
+  renderHero();
+  renderFilters();
+  renderCards(allProps);
+
+  document.getElementById('loadingState').style.display='none';
+  document.getElementById('heroSection').style.display='block';
+  document.getElementById('listingsSection').style.display='block';
+  document.getElementById('ctaSection').style.display='block';
+}
+
+function showNotFound(){
+  document.getElementById('loadingState').style.display='none';
+  document.getElementById('notFound').style.display='flex';
+}
+
+function renderHero(){
+  const p=agencyProfile;
+  // Avatar
+  const av=document.getElementById('agencyAvatar');
+  if(p.agency_logo){av.innerHTML=`<img src="${p.agency_logo}" alt="${p.agency_name}"/>`;}
+  else {av.textContent=(p.agency_name||'A')[0].toUpperCase();}
+
+  document.getElementById('agencyName').textContent=p.agency_name||p.full_name||'—';
+  document.getElementById('agencyBio').textContent=p.agency_bio||`Premium shortlet apartments managed with care. Browse our available listings below.`;
+
+  if(p.agency_city){document.getElementById('agencyCity').style.display='flex';document.getElementById('agencyCityVal').textContent=p.agency_city+', Nigeria';}
+
+  const propCount=allProps.length;
+  document.getElementById('agencyPropCountVal').textContent=`${propCount} shortlet${propCount!==1?'s':''}`;
+  document.getElementById('statListings').textContent=propCount;
+
+  const cities=new Set(allProps.map(x=>x.city));
+  document.getElementById('statCities').textContent=cities.size;
+
+  if(p.agency_whatsapp){
+    const wa=document.getElementById('waBtn'); wa.style.display='inline-flex'; wa.href=`https://wa.me/${p.agency_whatsapp}`;
+    const fab=document.getElementById('waFab'); fab.style.display='flex'; fab.href=`https://wa.me/${p.agency_whatsapp}`;
+    const ctaWa=document.getElementById('ctaWaBtn'); ctaWa.style.display='inline-flex'; ctaWa.href=`https://wa.me/${p.agency_whatsapp}`;
+  }
+  if(p.agency_phone){const cb=document.getElementById('callBtn');cb.style.display='inline-flex';cb.href=`tel:${p.agency_phone}`;}
+
+  document.getElementById('listingsSectionTitle').textContent=`${p.agency_name||'Our'} Shortlets`;
+  document.getElementById('listingsSectionSub').textContent=`${propCount} verified apartment${propCount!==1?'s':''} available for booking`;
+  document.getElementById('ctaTitle').textContent=`Book a Stay with ${p.agency_name||'This Agency'}`;
+  document.getElementById('ctaDesc').textContent=`Contact ${p.agency_name||'us'} directly to confirm availability and make a booking.`;
+}
+
+function renderFilters(){
+  const cities=[...new Set(allProps.map(p=>p.city))];
+  const row=document.getElementById('filterRow');
+  row.innerHTML=`<button class="f-btn active" data-city="all">All (${allProps.length})</button>`;
+  cities.forEach(c=>{
+    const count=allProps.filter(p=>p.city===c).length;
+    const btn=document.createElement('button');
+    btn.className='f-btn'; btn.dataset.city=c; btn.textContent=`${c} (${count})`;
+    row.appendChild(btn);
+  });
+  row.addEventListener('click',e=>{
+    const btn=e.target.closest('.f-btn'); if(!btn) return;
+    document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const city=btn.dataset.city;
+    renderCards(city==='all'?allProps:allProps.filter(p=>p.city===city));
+  });
+}
+
+function renderCards(props){
+  const grid=document.getElementById('cardsGrid');
+  if(!props.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1">No shortlets in this city yet.</div>`;return;}
+  grid.innerHTML=props.map(p=>{
+    const top=(p.amenities||[]).slice(0,3);
+    return `
+      <a href="property-details.html?id=${p.id}" class="prop-card">
+        <div class="card-img">
+          <img src="${p.cover_image||''}" alt="${p.title}" loading="lazy"/>
+          <span class="tag">Shortlet</span>
+          <span class="avail-badge">Available Now</span>
+        </div>
+        <div class="card-body">
+          <div class="prop-name">${p.title}</div>
+          <div class="prop-addr">📍 ${p.address}, ${p.city}</div>
+          <div class="amenity-pills">${top.map(a=>`<span class="apill">${getIcon(a)} ${a}</span>`).join('')}</div>
+          <div class="prop-meta">
+            ${p.bedrooms?`<span class="meta-item">🛏 ${p.bedrooms} Bed${p.bedrooms>1?'s':''}</span>`:''}
+            ${p.bathrooms?`<span class="meta-item">🚿 ${p.bathrooms} Bath${p.bathrooms>1?'s':''}</span>`:''}
+            ${p.max_guests?`<span class="meta-item">👥 Max ${p.max_guests}</span>`:''}
+          </div>
+          <div class="card-foot">
+            <div><div class="prop-price">${fmtNaira(p.price)}</div><div class="price-per">${p.price_label||'/ night'}</div></div>
+            <span class="book-btn">Book Now</span>
+          </div>
+        </div>
+      </a>`;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
