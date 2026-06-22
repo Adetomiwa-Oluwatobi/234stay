@@ -3,8 +3,8 @@
 // Replace with your project values from:
 // Supabase Dashboard → Project Settings → API
 // ============================================
-const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+const SUPABASE_URL = 'https://ybqjnmwasfpezjrhuviq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Uh5PqJlM4_5Hw2cnh2HyqA_eqWo3lCe';
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
