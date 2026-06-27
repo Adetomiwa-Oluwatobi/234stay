@@ -9,7 +9,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --orange:#70D321;--orange-lt:#70D321;--orange-bg:#FEF3EB;
+  --orange:#E07B39;--orange-lt:#F5924A;--orange-bg:#FEF3EB;
   --dark:#1A1A2E;--text:#2D2D2D;--gray:#6B7280;--gray-lt:#9CA3AF;
   --border:#E5E7EB;--bg:#F0F2F5;--white:#FFFFFF;
   --green:#059669;--green-bg:#D1FAE5;
@@ -245,6 +245,9 @@ select.filter-sel:focus{border-color:var(--orange)}
   <div class="nav-section">
     <div class="nav-section-title">Agencies</div>
     <a class="nav-item" data-view="agencies"><span class="nav-icon">🏢</span> Agencies</a>
+    <a class="nav-item" data-view="withdrawals"><span class="nav-icon">💸</span> Withdrawals</a>
+    <a class="nav-item" data-view="refunds"><span class="nav-icon">↩️</span> Refunds</a>
+    <a class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span> Settings</a>
   </div>
   <div class="sidebar-bottom">
     <div class="sidebar-user">
@@ -638,6 +641,83 @@ select.filter-sel:focus{border-color:var(--orange)}
       </div>
     </div>
 
+
+    <!-- ═══════ WITHDRAWALS VIEW ═══════ -->
+    <div class="view" id="view-withdrawals">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Withdrawal Requests</h2>
+          <select class="filter-sel" id="wdFilter" onchange="filterWithdrawals()">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="paid">Paid</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Agency</th><th>Bank Details</th><th>Amount</th><th>Requested</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="wdBody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ REFUNDS VIEW ═══════ -->
+    <div class="view" id="view-refunds">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Refund Requests</h2>
+          <select class="filter-sel" id="refundFilter" onchange="filterRefunds()">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="processed">Processed</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Booking</th><th>Requested By</th><th>Reason</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="refundBody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ SETTINGS VIEW ═══════ -->
+    <div class="view" id="view-settings">
+      <div class="panel">
+        <div class="panel-head"><h2>Platform Settings</h2></div>
+        <div class="panel-body">
+          <div style="max-width:480px;display:flex;flex-direction:column;gap:20px">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:8px">Platform Fee (%)</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="number" id="feeInput" min="0" max="100" step="0.5" style="padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;width:120px"/>
+                <button class="btn btn-orange" onclick="saveFee()">Save</button>
+              </div>
+              <p style="font-size:12px;color:var(--gray-lt);margin-top:6px">Currently charged on every successful booking. Set to 0 during launch period.</p>
+            </div>
+            <div style="background:var(--orange-bg);border-radius:10px;padding:16px 18px">
+              <div style="font-weight:700;color:var(--dark);font-size:14px;margin-bottom:4px">🚀 Launch Mode</div>
+              <p style="font-size:13px;color:var(--gray);margin-bottom:12px">While launch mode is on, platform fee is automatically 0% regardless of the setting above.</p>
+              <div style="display:flex;align-items:center;gap:12px">
+                <label style="font-size:13px;font-weight:600;color:var(--dark)">Launch Mode:</label>
+                <select id="launchMode" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none">
+                  <option value="true">ON (0% fee)</option>
+                  <option value="false">OFF (use fee % above)</option>
+                </select>
+                <button class="btn btn-orange btn-sm" onclick="saveLaunchMode()">Save</button>
+              </div>
+            </div>
+            <div id="settingsMsg" style="display:none;padding:12px 16px;border-radius:8px;font-size:13px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /.content -->
 </div><!-- /.main -->
 
@@ -652,7 +732,7 @@ select.filter-sel:focus{border-color:var(--orange)}
 const viewTitles = {
   dashboard:'Dashboard', availability:'Manage Availability',
   properties:'Shortlets', 'add-property':'Add Shortlet',
-  requests:'Booking Requests', agencies:'Agencies'
+  requests:'Booking Requests', agencies:'Agencies', withdrawals:'Withdrawals', refunds:'Refund Requests', settings:'Settings'
 };
 function switchView(id){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -665,6 +745,9 @@ function switchView(id){
   if(id==='requests') loadRequests();
   if(id==='availability') loadAvailProperties();
   if(id==='agencies') loadAgencies();
+  if(id==='withdrawals') loadWithdrawals();
+  if(id==='refunds') loadRefunds();
+  if(id==='settings') loadSettings();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
   el.addEventListener('click',()=>switchView(el.dataset.view));
@@ -1175,6 +1258,166 @@ async function viewAgencyProps(ownerId, name){
   renderPropertiesTable(filtered);
   document.getElementById('topbarTitle').textContent=`${name}'s Listings`;
 }
+
+// ══════════════════════════════════════════
+//  WITHDRAWALS
+// ══════════════════════════════════════════
+let allWithdrawals = [];
+async function loadWithdrawals(){
+  const { data } = await supabaseClient
+    .from('withdrawal_requests')
+    .select('*, profiles(agency_name, full_name)')
+    .order('created_at', { ascending: false });
+  allWithdrawals = data || [];
+  renderWithdrawals(allWithdrawals);
+}
+function filterWithdrawals(){
+  const s = document.getElementById('wdFilter').value;
+  renderWithdrawals(s==='all' ? allWithdrawals : allWithdrawals.filter(w=>w.status===s));
+}
+function renderWithdrawals(wds){
+  const statusColors = { pending:'badge-new', approved:'badge-contacted', paid:'badge-active', rejected:'badge-cancelled' };
+  document.getElementById('wdBody').innerHTML = wds.length ? wds.map(w=>`
+    <tr>
+      <td><strong>${w.profiles?.agency_name || w.profiles?.full_name || '—'}</strong></td>
+      <td>
+        <div style="font-size:13px;font-weight:600">${w.bank_name||'—'}</div>
+        <div style="font-size:11px;color:var(--gray)">${w.account_number||'—'} · ${w.account_name||'—'}</div>
+      </td>
+      <td><strong style="color:var(--dark)">${fmtNaira(w.amount)}</strong></td>
+      <td>${fmtDate(w.created_at)}</td>
+      <td><span class="badge ${statusColors[w.status]||'badge-inactive'}">${w.status}</span></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        ${w.status==='pending'?`
+          <button class="btn btn-green btn-sm" onclick="approveWithdrawal('${w.id}')">✓ Approve</button>
+          <button class="btn btn-red btn-sm" onclick="rejectWithdrawal('${w.id}')">✕ Reject</button>`:''}
+        ${w.status==='approved'?`
+          <button class="btn btn-orange btn-sm" onclick="processWithdrawal('${w.id}')">💸 Pay Now</button>`:''}
+        ${w.status==='paid'?`<span style="font-size:12px;color:var(--green)">✓ Paid ${fmtDate(w.processed_at)}</span>`:''}
+        ${w.status==='rejected'?`<span style="font-size:12px;color:var(--red)">✕ Rejected</span>`:''}
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty-state">No withdrawal requests.</td></tr>';
+}
+async function approveWithdrawal(id){
+  const note = prompt('Add a note (optional):') || '';
+  const { error } = await supabaseClient.from('withdrawal_requests')
+    .update({ status:'approved', admin_note: note }).eq('id', id);
+  if(error){ toast('Failed: '+error.message,'error'); return; }
+  toast('Withdrawal approved — ready to process','success');
+  loadWithdrawals();
+}
+async function rejectWithdrawal(id){
+  const note = prompt('Reason for rejection:');
+  if(!note) return;
+  const { error } = await supabaseClient.from('withdrawal_requests')
+    .update({ status:'rejected', admin_note: note }).eq('id', id);
+  if(error){ toast('Failed','error'); return; }
+  toast('Withdrawal rejected','info');
+  loadWithdrawals();
+}
+async function processWithdrawal(id){
+  if(!confirm('Process this withdrawal via Paystack? Funds will be sent immediately.')) return;
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  const res = await fetch(
+    `${supabaseClient.supabaseUrl}/functions/v1/process-withdrawal`,
+    {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ withdrawal_id: id })
+    }
+  );
+  const result = await res.json();
+  if(!res.ok || !result.success){ toast('Error: '+(result.error||'Failed'),'error'); return; }
+  toast(result.message,'success');
+  loadWithdrawals();
+}
+
+// ══════════════════════════════════════════
+//  REFUNDS
+// ══════════════════════════════════════════
+let allRefunds = [];
+async function loadRefunds(){
+  const { data } = await supabaseClient
+    .from('refund_requests')
+    .select('*, bookings(property_title, guest_name, payment_reference)')
+    .order('created_at', { ascending: false });
+  allRefunds = data || [];
+  renderRefunds(allRefunds);
+}
+function filterRefunds(){
+  const s = document.getElementById('refundFilter').value;
+  renderRefunds(s==='all' ? allRefunds : allRefunds.filter(r=>r.status===s));
+}
+function renderRefunds(refunds){
+  const statusColors = { pending:'badge-new', approved:'badge-contacted', rejected:'badge-cancelled', processed:'badge-active' };
+  document.getElementById('refundBody').innerHTML = refunds.length ? refunds.map(r=>`
+    <tr>
+      <td>
+        <div style="font-weight:700;font-size:13px">${r.bookings?.property_title||'—'}</div>
+        <div style="font-size:11px;color:var(--gray)">Guest: ${r.bookings?.guest_name||'—'}</div>
+        <div style="font-size:11px;color:var(--gray-lt)">Ref: ${r.bookings?.payment_reference||'—'}</div>
+      </td>
+      <td><span class="badge ${r.requested_by==='guest'?'badge-new':'badge-contacted'}">${r.requested_by}</span></td>
+      <td style="max-width:180px;font-size:12px;color:var(--gray)">${r.reason||'—'}</td>
+      <td><strong>${fmtNaira(r.amount)}</strong></td>
+      <td><span class="badge ${statusColors[r.status]||'badge-inactive'}">${r.status}</span></td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        ${r.status==='pending'?`
+          <button class="btn btn-green btn-sm" onclick="approveRefund('${r.id}')">✓ Approve</button>
+          <button class="btn btn-red btn-sm" onclick="rejectRefund('${r.id}')">✕ Reject</button>`:''}
+        ${r.status==='approved'?`<span style="font-size:12px;color:var(--orange)">Awaiting Paystack refund</span>`:''}
+        ${r.status==='processed'?`<span style="font-size:12px;color:var(--green)">✓ Refunded</span>`:''}
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6" class="empty-state">No refund requests.</td></tr>';
+}
+async function approveRefund(id){
+  const note = prompt('Admin note (optional):') || '';
+  const { error } = await supabaseClient.from('refund_requests')
+    .update({ status:'approved', admin_note: note, processed_at: new Date().toISOString() }).eq('id', id);
+  if(error){ toast('Failed','error'); return; }
+  toast('Refund approved — process via Paystack dashboard','success');
+  loadRefunds();
+}
+async function rejectRefund(id){
+  const note = prompt('Reason for rejection:');
+  if(!note) return;
+  const { error } = await supabaseClient.from('refund_requests')
+    .update({ status:'rejected', admin_note: note }).eq('id', id);
+  if(error){ toast('Failed','error'); return; }
+  toast('Refund rejected','info');
+  loadRefunds();
+}
+
+// ══════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════
+async function loadSettings(){
+  const { data } = await supabaseClient.from('settings').select('*');
+  if(!data) return;
+  data.forEach(s => {
+    if(s.key === 'platform_fee_percent') document.getElementById('feeInput').value = s.value;
+    if(s.key === 'launch_mode') document.getElementById('launchMode').value = s.value;
+  });
+}
+async function saveFee(){
+  const val = document.getElementById('feeInput').value;
+  const { error } = await supabaseClient.from('settings')
+    .update({ value: val }).eq('key', 'platform_fee_percent');
+  if(error){ toast('Failed','error'); return; }
+  toast(`Platform fee set to ${val}%`,'success');
+}
+async function saveLaunchMode(){
+  const val = document.getElementById('launchMode').value;
+  const { error } = await supabaseClient.from('settings')
+    .update({ value: val }).eq('key', 'launch_mode');
+  if(error){ toast('Failed','error'); return; }
+  toast(`Launch mode ${val==='true'?'ON (0% fee)':'OFF (fee active)'}`, 'success');
+}
+
+const fmtNaira = n => '₦' + Number(n||0).toLocaleString('en-NG');
 
 // ══════════════════════════════════════════
 //  INIT — require admin auth

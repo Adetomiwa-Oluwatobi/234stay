@@ -15,9 +15,9 @@
 #detailContent{display:none}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --orange:#70D321;--orange-lt:#70D321;--orange-bg:#FEF3EB;
+  --orange:#E07B39;--orange-lt:#F5924A;--orange-bg:#FEF3EB;
   --dark:#1A1A2E;--text:#2D2D2D;--gray:#6B7280;--gray-lt:#9CA3AF;
-  --border:#E5E7EB;--bg:#F7F7F7;--white:#FFFFFF;--green:#1A6B45;
+  --border:#E5E7EB;--bg:#F7F7F7;--white:#FFFFFF;--green:#1A6B45;--green-bg:#D1FAE5;
   --red:#DC2626;--purple:#7C3AED;
   --card-shadow:0 2px 16px rgba(0,0,0,0.07);
 }
@@ -236,6 +236,7 @@ footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:56px 80px 28px}
   .footer-top{grid-template-columns:1fr}
 }
 </style>
+<script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
 <body>
 
@@ -783,29 +784,212 @@ async function loadPropertyDetails(){
   setupBookingForm(data);
 }
 
+// ── Payment state ──
+let currentProperty = null;
+let bookingCalc = {};
+
 function setupBookingForm(p){
-  document.getElementById('bookingForm').addEventListener('submit',async(e)=>{
-    e.preventDefault();
-    const btn=document.getElementById('bookSubmitBtn');
-    btn.textContent='Processing…'; btn.disabled=true;
-    const payload={
-      property_id:p.id, property_title:p.title,
-      owner_id: p.owner_id || null,
-      full_name:document.getElementById('bookName').value,
-      phone:document.getElementById('bookPhone').value,
-      preferred_date:document.getElementById('bookCheckin').value||null,
-      preferred_time:null,
-      buyer_type:document.getElementById('bookGuests').value+' guest(s)',
-      payment_plan:'shortlet',
-      message:document.getElementById('bookMessage').value
-    };
-    const { error } = await supabaseClient.from('inspection_requests').insert(payload);
-    if(error){ btn.textContent='Something went wrong — try again'; btn.disabled=false; return; }
-    btn.textContent='✓ Reservation Confirmed!';
-    document.getElementById('bookingForm').reset();
-    document.getElementById('priceBreakdown').style.display='none';
-    setTimeout(()=>{ btn.textContent='Reserve Now'; btn.disabled=false; },3500);
+  currentProperty = p;
+  // Set min date to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('bookCheckin').min = today;
+  document.getElementById('bookCheckout').min = today;
+  document.getElementById('bookCheckin').addEventListener('change', onDateChange);
+  document.getElementById('bookCheckout').addEventListener('change', onDateChange);
+}
+
+function onDateChange(){
+  const cin  = document.getElementById('bookCheckin').value;
+  const cout = document.getElementById('bookCheckout').value;
+  const btn  = document.getElementById('proceedBtn');
+
+  if(!cin || !cout){ btn.disabled=true; btn.textContent='Check Availability'; return; }
+  if(cout <= cin){ btn.disabled=true; btn.textContent='Invalid dates'; return; }
+
+  // Check blocked dates
+  if(blockedDates.has(cin)){
+    btn.disabled=true; btn.textContent='Check-in date unavailable'; return;
+  }
+
+  const nights = Math.round((new Date(cout) - new Date(cin)) / (1000*60*60*24));
+  const total  = nights * currentProperty.price;
+
+  // Payment type
+  const payType     = currentProperty.payment_type || 'full';
+  const depPct      = currentProperty.deposit_percent || 100;
+  const depositAmt  = payType === 'deposit' ? Math.round(total * depPct / 100) : total;
+  const balanceAmt  = total - depositAmt;
+  const balanceDue  = currentProperty.balance_due || 'on_arrival';
+
+  bookingCalc = { nights, total, payType, depPct, depositAmt, balanceAmt, balanceDue };
+
+  // Update breakdown
+  const bd = document.getElementById('priceBreakdown');
+  bd.style.display = 'block';
+  document.getElementById('pbNights').textContent    = `${nights} night${nights>1?'s':''} × ${formatNaira(currentProperty.price)}`;
+  document.getElementById('pbSubtotal').textContent  = formatNaira(total);
+  document.getElementById('pbTotal').textContent     = formatNaira(total);
+
+  if(payType === 'deposit'){
+    document.getElementById('pbDepositRow').style.display  = 'flex';
+    document.getElementById('pbBalanceRow').style.display  = 'flex';
+    document.getElementById('pbDepositLabel').textContent  = `Pay now (${depPct}% deposit)`;
+    document.getElementById('pbDepositAmt').textContent    = formatNaira(depositAmt);
+    document.getElementById('pbBalanceLabel').textContent  = `Balance ${balanceDue==='on_arrival'?'on arrival':'before check-in'}`;
+    document.getElementById('pbBalanceAmt').textContent    = formatNaira(balanceAmt);
+  } else {
+    document.getElementById('pbDepositRow').style.display = 'none';
+    document.getElementById('pbBalanceRow').style.display = 'none';
+  }
+
+  // Pay now notice
+  const notice = document.getElementById('payNowNotice');
+  notice.style.display = 'block';
+  document.getElementById('payNowAmount').textContent = formatNaira(depositAmt);
+  document.getElementById('payNowBalance').textContent = balanceAmt > 0
+    ? `₦${Number(balanceAmt).toLocaleString('en-NG')} balance due ${balanceDue==='on_arrival'?'on arrival':'before check-in'}.`
+    : '';
+
+  btn.disabled = false;
+  btn.textContent = 'Continue to Book';
+}
+
+function proceedToGuestDetails(){
+  const cin  = document.getElementById('bookCheckin').value;
+  const cout = document.getElementById('bookCheckout').value;
+  if(!cin||!cout||!bookingCalc.nights) return;
+
+  // Populate summary
+  const fmt = d => new Date(d+'T12:00:00').toLocaleDateString('en-NG',{day:'numeric',month:'short'});
+  document.getElementById('sumDates').textContent   = `${fmt(cin)} → ${fmt(cout)}`;
+  document.getElementById('sumNights').textContent  = `${bookingCalc.nights} night${bookingCalc.nights>1?'s':''}`;
+  document.getElementById('sumPPN').textContent     = formatNaira(currentProperty.price);
+  document.getElementById('sumPayLabel').textContent = bookingCalc.payType==='deposit'
+    ? `Pay now (${bookingCalc.depPct}% deposit)` : 'Pay now (full)';
+  document.getElementById('sumPayAmt').textContent  = formatNaira(bookingCalc.depositAmt);
+
+  document.getElementById('bookStep1').style.display = 'none';
+  document.getElementById('bookStep2').style.display = 'block';
+}
+
+function goBackToStep1(){
+  document.getElementById('bookStep2').style.display = 'none';
+  document.getElementById('bookStep1').style.display = 'block';
+}
+
+function initiatePayment(){
+  const name  = document.getElementById('bookName').value.trim();
+  const phone = document.getElementById('bookPhone').value.trim();
+  const email = document.getElementById('bookEmail').value.trim();
+  if(!name||!phone){ alert('Please enter your name and phone number.'); return; }
+
+  const btn = document.getElementById('payBtn');
+  btn.textContent = 'Opening Paystack…'; btn.disabled = true;
+
+  const handler = PaystackPop.setup({
+    key:    'pk_test_d4bdab5bb49f2cc95c0aaf6d9019133e430d4c9d',
+    email:  email || phone + '@234stays.guest',
+    amount: bookingCalc.depositAmt * 100, // kobo
+    currency: 'NGN',
+    ref:    '234ST_' + Date.now() + '_' + Math.random().toString(36).substr(2,6).toUpperCase(),
+    metadata: {
+      custom_fields: [
+        { display_name: 'Guest Name',  variable_name: 'guest_name',  value: name },
+        { display_name: 'Phone',       variable_name: 'phone',       value: phone },
+        { display_name: 'Property',    variable_name: 'property',    value: currentProperty.title },
+        { display_name: 'Check-in',    variable_name: 'checkin',     value: document.getElementById('bookCheckin').value },
+        { display_name: 'Check-out',   variable_name: 'checkout',    value: document.getElementById('bookCheckout').value },
+      ]
+    },
+    onClose: function(){
+      btn.textContent = '🔒 Pay with Paystack'; btn.disabled = false;
+    },
+    callback: async function(response){
+      btn.textContent = 'Verifying payment…'; btn.disabled = true;
+      await verifyAndBook(response.reference, name, phone, email);
+    }
   });
+  handler.openIframe();
+}
+
+async function verifyAndBook(reference, name, phone, email){
+  const btn = document.getElementById('payBtn');
+  try {
+    const booking_data = {
+      property_id:    currentProperty.id,
+      property_title: currentProperty.title,
+      owner_id:       currentProperty.owner_id,
+      guest_name:     name,
+      guest_phone:    phone,
+      guest_email:    email || null,
+      num_guests:     parseInt(document.getElementById('bookGuests').value) || 1,
+      special_requests: document.getElementById('bookMessage').value || null,
+      checkin_date:   document.getElementById('bookCheckin').value,
+      checkout_date:  document.getElementById('bookCheckout').value,
+      nights:         bookingCalc.nights,
+      price_per_night: currentProperty.price,
+      total_amount:   bookingCalc.total,
+      payment_type:   bookingCalc.payType,
+      deposit_percent: bookingCalc.depPct,
+      deposit_amount: bookingCalc.depositAmt,
+      balance_amount: bookingCalc.balanceAmt,
+      balance_due:    bookingCalc.balanceDue,
+    };
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    const res = await fetch(
+      `${supabaseClient.supabaseUrl}/functions/v1/verify-payment`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseClient.supabaseKey}`,
+          ...(session ? { 'x-user-token': session.access_token } : {})
+        },
+        body: JSON.stringify({ reference, booking_data })
+      }
+    );
+
+    const result = await res.json();
+
+    if(!res.ok || !result.success){
+      btn.textContent = '🔒 Pay with Paystack'; btn.disabled = false;
+      alert('Payment issue: ' + (result.error || 'Please contact support with ref: ' + reference));
+      return;
+    }
+
+    // Show confirmation
+    document.getElementById('bookStep2').style.display = 'none';
+    document.getElementById('bookStep3').style.display = 'block';
+    document.getElementById('confirmMsg').innerHTML =
+      `Your <strong>${bookingCalc.nights}-night</strong> stay at <strong>${currentProperty.title}</strong> is confirmed.<br/>
+       Check-in: <strong>${document.getElementById('bookCheckin').value}</strong> · 
+       Check-out: <strong>${document.getElementById('bookCheckout').value}</strong><br/><br/>
+       The host will contact you on <strong>${phone}</strong> shortly.`;
+    document.getElementById('confirmRef').innerHTML =
+      `Payment Reference: <strong>${reference}</strong><br/>Booking ID: <strong>${result.booking_id?.slice(0,8).toUpperCase()}</strong>`;
+
+    // Reload calendar to show newly blocked dates
+    await loadBlockedDates(currentProperty.id);
+
+  } catch(err) {
+    console.error(err);
+    btn.textContent = '🔒 Pay with Paystack'; btn.disabled = false;
+    alert('Network error. Your payment may have gone through — save this reference: ' + reference);
+  }
+}
+
+function resetBooking(){
+  document.getElementById('bookStep3').style.display = 'none';
+  document.getElementById('bookStep1').style.display = 'block';
+  document.getElementById('bookCheckin').value = '';
+  document.getElementById('bookCheckout').value = '';
+  document.getElementById('priceBreakdown').style.display = 'none';
+  document.getElementById('payNowNotice').style.display = 'none';
+  document.getElementById('proceedBtn').disabled = true;
+  document.getElementById('proceedBtn').textContent = 'Check Availability';
+  bookingCalc = {};
 }
 
 loadPropertyDetails();

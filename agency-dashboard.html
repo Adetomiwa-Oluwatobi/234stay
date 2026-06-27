@@ -9,7 +9,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --orange:#70D321;--orange-lt:#70D321;--orange-bg:#FEF3EB;
+  --orange:#E07B39;--orange-lt:#F5924A;--orange-bg:#FEF3EB;
   --dark:#1A1A2E;--text:#2D2D2D;--gray:#6B7280;--gray-lt:#9CA3AF;
   --border:#E5E7EB;--bg:#F0F2F5;--white:#fff;
   --green:#059669;--green-bg:#D1FAE5;--red:#DC2626;--red-bg:#FEE2E2;
@@ -217,6 +217,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
   <div class="nav-section">
     <div class="nav-label">Business</div>
     <a class="nav-item" data-view="requests"><span class="nav-icon">📋</span> Booking Requests</a>
+    <a class="nav-item" data-view="wallet"><span class="nav-icon">💰</span> Wallet</a>
     <a class="nav-item" data-view="profile"><span class="nav-icon">⚙️</span> Agency Profile</a>
   </div>
   <div class="sidebar-bottom">
@@ -426,6 +427,120 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
       </div>
     </div>
 
+    <!-- WALLET -->
+    <div class="view" id="view-wallet">
+      <!-- BALANCE CARDS -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px">
+        <div class="stat-card" style="background:linear-gradient(135deg,#1A1A2E,#2D2D4E);color:#fff">
+          <div class="stat-icon" style="background:rgba(255,255,255,.1)">💰</div>
+          <div>
+            <div class="stat-label" style="color:rgba(255,255,255,.6)">Available Balance</div>
+            <div class="stat-value" id="walletAvail" style="color:#fff">₦0</div>
+            <div class="stat-hint" style="color:rgba(255,255,255,.4)">Ready to withdraw</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#FEF3EB">⏳</div>
+          <div>
+            <div class="stat-label">Pending Balance</div>
+            <div class="stat-value" id="walletPending">₦0</div>
+            <div class="stat-hint">Released after guest checkout</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#D1FAE5">📈</div>
+          <div>
+            <div class="stat-label">Total Earned</div>
+            <div class="stat-value" id="walletTotal">₦0</div>
+            <div class="stat-hint">All time earnings</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start">
+        <!-- TRANSACTIONS -->
+        <div class="panel">
+          <div class="panel-head"><h2>Transaction History</h2></div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody id="txBody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- WITHDRAWAL FORM -->
+        <div>
+          <div class="panel">
+            <div class="panel-head"><h2>Request Withdrawal</h2></div>
+            <div class="panel-body">
+              <div style="background:var(--orange-bg);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--orange);margin-bottom:16px;line-height:1.6">
+                Withdrawals are processed after your guest's stay is completed and funds are released.
+              </div>
+              <div class="form-group" style="margin-bottom:14px">
+                <label>Amount (₦)</label>
+                <input type="number" id="wdAmount" placeholder="e.g. 50000" style="padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:var(--bg);width:100%"/>
+                <span style="font-size:11px;color:var(--gray-lt)" id="wdAvailHint">Available: ₦0</span>
+              </div>
+              <div class="form-group" style="margin-bottom:14px">
+                <label>Bank Name</label>
+                <select id="wdBank" style="padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:var(--bg);width:100%">
+                  <option value="">— Select bank —</option>
+                  <option value="044">Access Bank</option>
+                  <option value="063">Access Bank (Diamond)</option>
+                  <option value="035A">ALAT by WEMA</option>
+                  <option value="401">ASO Savings</option>
+                  <option value="023">Citibank</option>
+                  <option value="050">EcoBank</option>
+                  <option value="562">Ekondo Microfinance Bank</option>
+                  <option value="070">Fidelity Bank</option>
+                  <option value="011">First Bank</option>
+                  <option value="214">First City Monument Bank (FCMB)</option>
+                  <option value="058">GTBank</option>
+                  <option value="030">Heritage Bank</option>
+                  <option value="301">Jaiz Bank</option>
+                  <option value="082">Keystone Bank</option>
+                  <option value="526">Moniepoint MFB</option>
+                  <option value="014">MainStreet Bank</option>
+                  <option value="076">Polaris Bank</option>
+                  <option value="101">Providus Bank</option>
+                  <option value="221">Stanbic IBTC</option>
+                  <option value="068">Standard Chartered</option>
+                  <option value="232">Sterling Bank</option>
+                  <option value="100">Suntrust Bank</option>
+                  <option value="032">Union Bank</option>
+                  <option value="033">UBA</option>
+                  <option value="215">Unity Bank</option>
+                  <option value="035">Wema Bank</option>
+                  <option value="057">Zenith Bank</option>
+                  <option value="304">OPay</option>
+                  <option value="311">PalmPay</option>
+                  <option value="090405">Kuda Bank</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:14px">
+                <label>Account Number</label>
+                <input type="text" id="wdAccNum" placeholder="10-digit account number" maxlength="10" style="padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:var(--bg);width:100%"/>
+              </div>
+              <div class="form-group" style="margin-bottom:20px">
+                <label>Account Name</label>
+                <input type="text" id="wdAccName" placeholder="e.g. Emeka Okafor" style="padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;background:var(--bg);width:100%"/>
+              </div>
+              <button class="btn btn-orange" style="width:100%" onclick="requestWithdrawal()">Request Withdrawal</button>
+            </div>
+          </div>
+
+          <!-- WITHDRAWAL HISTORY -->
+          <div class="panel" style="margin-top:16px">
+            <div class="panel-head"><h2>Withdrawal Requests</h2></div>
+            <div id="wdHistory" style="padding:14px">
+              <div class="empty-state">No withdrawal requests yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- PROFILE SETTINGS -->
     <div class="view" id="view-profile">
       <div class="panel">
@@ -525,7 +640,7 @@ function copyShareLink(){
 }
 
 // ── NAV ──
-const viewTitles={dashboard:'Dashboard','my-properties':'My Shortlets','add-property':'Add Shortlet',availability:'Availability',requests:'Booking Requests',profile:'Agency Profile'};
+const viewTitles={dashboard:'Dashboard','my-properties':'My Shortlets','add-property':'Add Shortlet',availability:'Availability',requests:'Booking Requests',wallet:'My Wallet',profile:'Agency Profile'};
 function switchView(id){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -535,6 +650,7 @@ function switchView(id){
   if(id==='my-properties') renderMyProps();
   if(id==='requests') loadReqs();
   if(id==='availability') populateAvailSel();
+  if(id==='wallet') loadWallet();
   if(id==='profile') loadProfile();
 }
 document.querySelectorAll('.nav-item[data-view]').forEach(el=>el.addEventListener('click',()=>switchView(el.dataset.view)));
@@ -841,6 +957,105 @@ async function updateReqStatus(id,status){
   await supabaseClient.from('inspection_requests').update({status}).eq('id',id);
   toast('Status updated to "'+status+'"','success');
   loadReqs();
+}
+
+// ── WALLET ──
+let walletData = null;
+
+async function loadWallet(){
+  // Load wallet balances
+  const { data: wallet } = await supabaseClient
+    .from('wallets').select('*').eq('agency_id', myProfile.id).single();
+  walletData = wallet;
+  if(wallet){
+    document.getElementById('walletAvail').textContent   = fmtNaira(wallet.available_balance || 0);
+    document.getElementById('walletPending').textContent = fmtNaira(wallet.pending_balance || 0);
+    document.getElementById('walletTotal').textContent   = fmtNaira(wallet.total_earned || 0);
+    document.getElementById('wdAvailHint').textContent   = `Available: ${fmtNaira(wallet.available_balance || 0)}`;
+  }
+  // Load transactions
+  const { data: txs } = await supabaseClient
+    .from('transactions').select('*')
+    .eq('agency_id', myProfile.id)
+    .order('created_at', { ascending: false }).limit(50);
+  const txBody = document.getElementById('txBody');
+  if(!txs || !txs.length){
+    txBody.innerHTML = '<tr><td colspan="5" class="empty-state">No transactions yet.</td></tr>';
+  } else {
+    txBody.innerHTML = txs.map(t => {
+      const isCredit = t.type === 'credit';
+      const color = isCredit ? 'var(--green)' : 'var(--red)';
+      const sign  = isCredit ? '+' : '-';
+      const typeBadge = {
+        credit: '<span class="badge badge-active">Credit</span>',
+        withdrawal: '<span class="badge" style="background:#DBEAFE;color:#1D4ED8">Withdrawal</span>',
+        refund: '<span class="badge badge-cancelled">Refund</span>',
+        platform_fee: '<span class="badge badge-inactive">Fee</span>',
+      }[t.type] || t.type;
+      return `<tr>
+        <td>${fmtDate(t.created_at)}</td>
+        <td style="max-width:200px;font-size:12px">${t.description||'—'}</td>
+        <td>${typeBadge}</td>
+        <td style="font-weight:700;color:${color}">${sign}${fmtNaira(t.amount)}</td>
+        <td><span class="badge ${t.status==='success'?'badge-active':'badge-inactive'}">${t.status}</span></td>
+      </tr>`;
+    }).join('');
+  }
+  // Load withdrawal history
+  const { data: wds } = await supabaseClient
+    .from('withdrawal_requests').select('*')
+    .eq('agency_id', myProfile.id)
+    .order('created_at', { ascending: false });
+  const wdHist = document.getElementById('wdHistory');
+  if(!wds || !wds.length){
+    wdHist.innerHTML = '<div class="empty-state">No withdrawal requests yet.</div>';
+  } else {
+    const statusColors = { pending:'badge-new', approved:'badge-contacted', paid:'badge-active', rejected:'badge-cancelled' };
+    wdHist.innerHTML = wds.map(w => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--dark)">${fmtNaira(w.amount)}</div>
+          <div style="font-size:11px;color:var(--gray)">${w.bank_name||'—'} · ${w.account_number||'—'}</div>
+          <div style="font-size:11px;color:var(--gray-lt)">${fmtDate(w.created_at)}</div>
+        </div>
+        <span class="badge ${statusColors[w.status]||'badge-inactive'}">${w.status}</span>
+      </div>`).join('');
+  }
+}
+
+async function requestWithdrawal(){
+  const amount  = parseFloat(document.getElementById('wdAmount').value);
+  const bank    = document.getElementById('wdBank');
+  const bankName = bank.options[bank.selectedIndex]?.text || '';
+  const bankCode = bank.value;
+  const accNum  = document.getElementById('wdAccNum').value.trim();
+  const accName = document.getElementById('wdAccName').value.trim();
+
+  if(!amount || amount < 1000){  toast('Minimum withdrawal is ₦1,000','error'); return; }
+  if(!bankCode){ toast('Please select your bank','error'); return; }
+  if(accNum.length !== 10){ toast('Enter a valid 10-digit account number','error'); return; }
+  if(!accName){ toast('Enter the account name','error'); return; }
+  if(amount > (walletData?.available_balance || 0)){
+    toast(`Insufficient balance. Available: ${fmtNaira(walletData?.available_balance || 0)}`,'error'); return;
+  }
+
+  const { error } = await supabaseClient.from('withdrawal_requests').insert({
+    agency_id:      myProfile.id,
+    amount,
+    bank_name:      bankName,
+    bank_code:      bankCode,
+    account_number: accNum,
+    account_name:   accName,
+    status:         'pending'
+  });
+
+  if(error){ toast('Failed: '+error.message,'error'); return; }
+  toast('Withdrawal request submitted! Admin will process it shortly.','success');
+  document.getElementById('wdAmount').value = '';
+  document.getElementById('wdAccNum').value = '';
+  document.getElementById('wdAccName').value = '';
+  bank.value = '';
+  loadWallet();
 }
 
 // ── PROFILE ──
