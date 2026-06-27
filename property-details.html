@@ -46,17 +46,25 @@ nav ul a:hover{color:var(--orange)}
 .detail-page{padding:48px 80px 80px;max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:44px;align-items:start}
 
 /* GALLERY */
-.gallery{display:grid;grid-template-columns:120px 1fr;gap:12px;margin-bottom:32px}
-.thumb-col{display:flex;flex-direction:column;gap:10px}
-.thumb{height:86px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .2s}
+.gallery{display:grid;grid-template-columns:100px 1fr;gap:10px;margin-bottom:32px}
+.thumb-col{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;scrollbar-width:none}
+.thumb-col::-webkit-scrollbar{display:none}
+.thumb{height:80px;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .2s;position:relative;flex-shrink:0;background:var(--dark)}
 .thumb:hover,.thumb.active{border-color:var(--orange)}
 .thumb img{width:100%;height:100%;object-fit:cover}
-.thumb-more{position:relative;height:86px;border-radius:8px;overflow:hidden;cursor:pointer}
-.thumb-more img{width:100%;height:100%;object-fit:cover;filter:brightness(.45)}
-.thumb-more-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
-.main-photo{border-radius:14px;overflow:hidden;position:relative;height:420px}
-.main-photo img{width:100%;height:100%;object-fit:cover;transition:opacity .3s}
-.play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;transition:background .2s;border:none}
+.thumb-video-badge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);color:#fff;font-size:18px}
+.main-photo{border-radius:14px;overflow:hidden;position:relative;height:420px;background:var(--dark);cursor:zoom-in}
+.main-photo img{width:100%;height:100%;object-fit:cover;transition:opacity .25s;display:block}
+.main-photo iframe{width:100%;height:100%;border:none;display:none}
+.main-photo.video-active img{display:none}
+.main-photo.video-active iframe{display:block}
+.main-photo.video-active{cursor:default}
+/* media type badge on main */
+.main-media-badge{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;backdrop-filter:blur(4px);z-index:2;pointer-events:none}
+/* zoom-in hint */
+.zoom-hint{position:absolute;bottom:14px;right:14px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;padding:4px 10px;border-radius:12px;backdrop-filter:blur(4px);pointer-events:none;z-index:2}
+.play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:26px;transition:all .2s;border:none;box-shadow:0 4px 24px rgba(0,0,0,.3);z-index:2}
+.play-btn:hover{transform:translate(-50%,-50%) scale(1.08);background:#fff}
 
 /* INFO */
 .prop-info-bar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:20px}
@@ -280,9 +288,12 @@ footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:56px 80px 28px}
     <!-- GALLERY -->
     <div class="gallery">
       <div class="thumb-col" id="thumbCol"></div>
-      <div class="main-photo" id="mainPhotoWrap" onclick="openZoom()">
-        <img id="mainPhoto" src="" alt="Main photo"/>
-        <button class="play-btn" id="playBtn" onclick="event.stopPropagation();openVideo()" style="display:none">▶</button>
+      <div class="main-photo" id="mainPhotoWrap">
+        <img id="mainPhoto" src="" alt="Main photo" onclick="openZoom()"/>
+        <iframe id="mainVideo" src="" allowfullscreen allow="autoplay; encrypted-media" style="display:none;width:100%;height:100%;border:none"></iframe>
+        <div class="main-media-badge" id="mediaBadge" style="display:none"></div>
+        <div class="zoom-hint" id="zoomHint">🔍 Click to zoom</div>
+        <button class="play-btn" id="playBtn" style="display:none" onclick="activateVideo()">▶</button>
       </div>
     </div>
 
@@ -492,34 +503,27 @@ footer{background:#1E1E2E;color:rgba(255,255,255,.65);padding:56px 80px 28px}
 
 <a href="https://wa.me/2340000000000" class="wa-fab">💬</a>
 
-<div class="modal-overlay" id="videoModal">
-  <div class="modal-box">
-    <button class="modal-close" onclick="closeVideo()">✕</button>
-    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);flex-direction:column;gap:10px">
-      <div style="font-size:64px">▶</div>
-      <span id="videoModalTitle">Property Video Tour</span>
-    </div>
-  </div>
-</div>
-
-<div class="zoom-overlay" id="zoomModal">
+<!-- ZOOM MODAL (images only) -->
+<div class="zoom-overlay" id="zoomModal" onclick="if(event.target===this)closeZoom()">
   <button class="zoom-close" onclick="closeZoom()">✕</button>
   <img class="zoom-img" id="zoomImg" src="" alt="Zoomed photo"/>
 </div>
 
 <script src="supabase-config.js"></script>
 <script>
-// ── Modal helpers ──
-function openVideo(){ document.getElementById('videoModal').classList.add('open'); document.body.style.overflow='hidden' }
-function closeVideo(){ document.getElementById('videoModal').classList.remove('open'); document.body.style.overflow='' }
-function openZoom(){ const s=document.getElementById('mainPhoto').src; if(!s)return; document.getElementById('zoomImg').src=s; document.getElementById('zoomModal').classList.add('open'); document.body.style.overflow='hidden' }
-function closeZoom(){ document.getElementById('zoomModal').classList.remove('open'); document.body.style.overflow='' }
-document.getElementById('videoModal').addEventListener('click',function(e){if(e.target===this)closeVideo()});
-document.getElementById('zoomModal').addEventListener('click',function(e){if(e.target===this)closeZoom()});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeVideo();closeZoom()}});
-document.querySelector('.wishlist-btn').addEventListener('click',function(){this.innerHTML=this.innerHTML.includes('🤍')?'❤️ Saved!':'🤍 Save to Wishlist'});
-
-function switchPhoto(el,src){ document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active')); el.classList.add('active'); document.getElementById('mainPhoto').src=src }
+// ── Zoom modal ──
+function openZoom(){
+  const item = galleryItems[currentMediaIndex];
+  if(!item || item.type !== 'image') return;
+  document.getElementById('zoomImg').src = item.src;
+  document.getElementById('zoomModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeZoom(){ document.getElementById('zoomModal').classList.remove('open'); document.body.style.overflow=''; }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeZoom(); });
+document.querySelector('.wishlist-btn').addEventListener('click',function(){
+  this.innerHTML=this.innerHTML.includes('🤍')?'❤️ Saved!':'🤍 Save to Wishlist';
+});
 
 // ── Amenity icons ──
 const amenityIconMap = {
@@ -539,26 +543,6 @@ function getAmenityIcon(a){
 
 // ── Formatters ──
 function formatNaira(n){ return '₦'+Number(n).toLocaleString('en-NG') }
-
-// ── Price breakdown ──
-let propertyPrice = 0;
-function updatePriceBreakdown(){
-  const cin=document.getElementById('bookCheckin').value;
-  const cout=document.getElementById('bookCheckout').value;
-  if(!cin||!cout) return;
-  const nights=Math.round((new Date(cout)-new Date(cin))/(1000*60*60*24));
-  if(nights<=0) return;
-  const subtotal=nights*propertyPrice;
-  const fee=Math.round(subtotal*0.05);
-  const total=subtotal+fee;
-  document.getElementById('pbNights').textContent=`${nights} night${nights>1?'s':''} × ${formatNaira(propertyPrice)}`;
-  document.getElementById('pbSubtotal').textContent=formatNaira(subtotal);
-  document.getElementById('pbFee').textContent=formatNaira(fee);
-  document.getElementById('pbTotal').textContent=formatNaira(total);
-  document.getElementById('priceBreakdown').style.display='block';
-}
-document.getElementById('bookCheckin').addEventListener('change',updatePriceBreakdown);
-document.getElementById('bookCheckout').addEventListener('change',updatePriceBreakdown);
 
 // ── Availability Calendar ──
 let calYear, calMonth;
@@ -621,20 +605,151 @@ async function loadBlockedDates(pid){
 }
 
 // ── Gallery ──
+// Detects whether each item is a video URL or image URL
+function isVideoUrl(url){
+  if(!url) return false;
+  return url.includes('youtube.com') || url.includes('youtu.be') ||
+         url.includes('vimeo.com')   || url.match(/\.(mp4|webm|ogg)$/i);
+}
+
+function getYoutubeEmbed(url){
+  // Convert watch URL → embed URL
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
+  if(m) return `https://www.youtube.com/embed/${m[1]}?autoplay=1&rel=0`;
+  if(url.includes('youtube.com/embed/')) return url;
+  return url;
+}
+
+function getVimeoEmbed(url){
+  const m = url.match(/vimeo\.com\/(\d+)/);
+  if(m) return `https://player.vimeo.com/video/${m[1]}?autoplay=1`;
+  return url;
+}
+
+function getEmbedUrl(url){
+  if(url.includes('youtube.com') || url.includes('youtu.be')) return getYoutubeEmbed(url);
+  if(url.includes('vimeo.com')) return getVimeoEmbed(url);
+  return url; // direct mp4 etc
+}
+
+function getThumbnailForVideo(url){
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
+  if(m) return `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`;
+  return null;
+}
+
+// All media items (images + videos) in order
+let galleryItems = []; // [{type:'image'|'video', src, embed}]
+let currentMediaIndex = 0;
+
 function buildGallery(p){
-  const images=(p.gallery_images&&p.gallery_images.length)?p.gallery_images:[p.cover_image].filter(Boolean);
-  if(!images.length) return;
-  document.getElementById('mainPhoto').src=images[0];
-  const MAX=3; let html='';
-  images.slice(0,MAX).forEach((src,i)=>{
-    html+=`<div class="thumb ${i===0?'active':''}" onclick="switchPhoto(this,'${src}')"><img src="${src}" alt="View ${i+1}"/></div>`;
-  });
-  if(images.length>MAX){
-    const extra=images.length-MAX;
-    html+=`<div class="thumb-more" onclick="openZoom()"><img src="${images[MAX]}" alt="More"/><div class="thumb-more-label">+${extra} Photo${extra>1?'s':''}</div></div>`;
+  galleryItems = [];
+
+  // Collect all media: gallery_images array + video_url field
+  const rawItems = (p.gallery_images && p.gallery_images.length)
+    ? [...p.gallery_images]
+    : p.cover_image ? [p.cover_image] : [];
+
+  // Add video_url if not already in gallery_images
+  if(p.video_url && !rawItems.includes(p.video_url)){
+    rawItems.unshift(p.video_url); // video first
   }
-  document.getElementById('thumbCol').innerHTML=html;
-  if(p.video_url){ document.getElementById('playBtn').style.display='flex'; document.getElementById('videoModalTitle').textContent=`Video Tour — ${p.title}`; }
+
+  rawItems.forEach(url => {
+    if(isVideoUrl(url)){
+      galleryItems.push({
+        type:  'video',
+        src:   getThumbnailForVideo(url) || p.cover_image || '',
+        embed: getEmbedUrl(url),
+        raw:   url
+      });
+    } else {
+      galleryItems.push({ type:'image', src: url });
+    }
+  });
+
+  if(!galleryItems.length) return;
+
+  // Build thumbnails
+  const thumbCol = document.getElementById('thumbCol');
+  thumbCol.innerHTML = galleryItems.map((item, i) => {
+    if(item.type === 'video'){
+      const thumb = item.src
+        ? `<img src="${item.src}" alt="Video ${i+1}"/>`
+        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px">🎬</div>`;
+      return `<div class="thumb ${i===0?'active':''}" onclick="switchMedia(${i})">
+        ${thumb}
+        <div class="thumb-video-badge">▶</div>
+      </div>`;
+    } else {
+      return `<div class="thumb ${i===0?'active':''}" onclick="switchMedia(${i})">
+        <img src="${item.src}" alt="Photo ${i+1}"/>
+      </div>`;
+    }
+  }).join('');
+
+  // Show first item
+  switchMedia(0);
+}
+
+function switchMedia(index){
+  currentMediaIndex = index;
+  const item = galleryItems[index];
+  if(!item) return;
+
+  const mainWrap  = document.getElementById('mainPhotoWrap');
+  const mainPhoto = document.getElementById('mainPhoto');
+  const mainVideo = document.getElementById('mainVideo');
+  const playBtn   = document.getElementById('playBtn');
+  const badge     = document.getElementById('mediaBadge');
+  const zoomHint  = document.getElementById('zoomHint');
+
+  // Update active thumb
+  document.querySelectorAll('.thumb').forEach((t,i) => t.classList.toggle('active', i===index));
+
+  if(item.type === 'video'){
+    // Show thumbnail with play button — don't autoplay until clicked
+    mainPhoto.src = item.src || '';
+    mainPhoto.style.display = 'block';
+    mainVideo.src = '';
+    mainVideo.style.display = 'none';
+    mainWrap.classList.remove('video-active');
+    mainPhoto.style.cursor = 'default';
+    playBtn.style.display = 'flex';
+    badge.style.display = 'block';
+    badge.textContent = '🎬 Video Tour';
+    zoomHint.style.display = 'none';
+  } else {
+    mainPhoto.src = item.src;
+    mainPhoto.style.display = 'block';
+    mainPhoto.style.cursor = 'zoom-in';
+    mainVideo.src = '';
+    mainVideo.style.display = 'none';
+    mainWrap.classList.remove('video-active');
+    playBtn.style.display = 'none';
+    badge.style.display = 'block';
+    badge.textContent = `📷 ${index+1} / ${galleryItems.length}`;
+    zoomHint.style.display = 'block';
+  }
+}
+
+function activateVideo(){
+  const item = galleryItems[currentMediaIndex];
+  if(!item || item.type !== 'video') return;
+  const mainWrap  = document.getElementById('mainPhotoWrap');
+  const mainPhoto = document.getElementById('mainPhoto');
+  const mainVideo = document.getElementById('mainVideo');
+  const playBtn   = document.getElementById('playBtn');
+  const zoomHint  = document.getElementById('zoomHint');
+  const badge     = document.getElementById('mediaBadge');
+
+  mainVideo.src = item.embed;
+  mainVideo.style.display = 'block';
+  mainPhoto.style.display = 'none';
+  playBtn.style.display = 'none';
+  zoomHint.style.display = 'none';
+  badge.textContent = '🎬 Playing';
+  mainWrap.classList.add('video-active');
 }
 
 function buildAmenities(p){

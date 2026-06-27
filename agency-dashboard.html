@@ -318,8 +318,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 
               <div class="form-group full"><div class="form-section-title">Media</div></div>
               <div class="form-group full"><label>Cover Image URL</label><input type="url" id="fCover" placeholder="https://…" oninput="previewImg(this.value)"/><img id="coverPreview" class="img-preview" alt=""/></div>
-              <div class="form-group full"><label>Gallery Images (one URL per line)</label><textarea id="fGallery" rows="3" placeholder="https://img1.jpg&#10;https://img2.jpg"></textarea></div>
-              <div class="form-group full"><label>Video URL</label><input type="url" id="fVideo" placeholder="https://youtube.com/embed/…"/></div>
+              <div class="form-group full"><label>Gallery Images & Videos <span style="font-weight:400;color:var(--gray-lt)">(one URL per line)</span></label>
+                <textarea id="fGallery" rows="4" placeholder="https://img1.jpg&#10;https://img2.jpg&#10;https://youtube.com/watch?v=VIDEO_ID"></textarea>
+                <span class="form-hint">✅ Supports image URLs (jpg, png, webp) and YouTube/Vimeo video links. Videos show a play button in the gallery.</span>
+              </div>
+              <div class="form-group full"><label>Featured Video URL <span style="font-weight:400;color:var(--gray-lt)">(optional — appears as first gallery item)</span></label>
+                <input type="url" id="fVideo" placeholder="https://youtube.com/watch?v=VIDEO_ID or https://vimeo.com/VIDEO_ID"/>
+                <span class="form-hint">If set, the video tour appears as the first thumbnail. You can also paste video links directly into the gallery field above.</span>
+              </div>
 
               <div class="form-group full"><div class="form-section-title">Description & Amenities</div></div>
               <div class="form-group full"><label>Overview</label><textarea id="fOverview" rows="4" placeholder="Describe this apartment…"></textarea></div>
